@@ -9,23 +9,20 @@ import scipy.io as sio
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
+import h5py
+import nibabel as nib
+import hdf5storage
 
-from utils.parse_surrogate_options import ParseOptions
-from utils.convert_sigmd import SigmoidConverter
+from utils.parse_vneumod_options import ParseOptions
 import models
 import surrogate
+
+import glm
 
 
 # -------------------------------------------------------------------------
 # matrix calculation
-def save_result_files(opt, y, outname):
-    out_path_f = opt.outpath + os.sep + outname
-    if opt.format == 0:  # csv each
-        for i in range(y.shape[2]):
-            f_name = out_path_f + '_' + str(i+1) + '.csv'
-            print('output csv file : ' + f_name)
-            np.savetxt(f_name, y[:, :, i], delimiter=',')
-
+'''
     elif opt.format == 1:  # mat each
         for i in range(y.shape[2]):
             f_name = out_path_f + '_' + str(i+1) + '.mat'
@@ -41,7 +38,7 @@ def save_result_files(opt, y, outname):
             cx[i] = y[:, :, i]
             names[i] = outname+'_'+str(i+1)
         sio.savemat(f_name, {'CX': cx, 'names': names})
-
+'''
 
 # -------------------------------------------------------------------------
 # main
@@ -49,109 +46,175 @@ if __name__ == '__main__':
     options = ParseOptions()
     opt = options.parse()
 
-    if not opt.multi and not opt.uni:
-        opt.multi = True
-
     if type(opt.outpath) is list:
         opt.outpath = opt.outpath[0]  # replaced by string
-    if type(opt.noise) is list:
-        opt.noise = opt.noise[0]  # replaced by string
 
-    # read time-series
-    for i in range(len(opt.in_files)):
-        if not os.path.isfile(opt.in_files[i]):
-            print('bad file name. ignore : ' + opt.in_files[i])
-            continue
+    # extract rois
+    if ':' in opt.roi[0]:
+        rois=[0]
+    else:
+        rois=[int(opt.roi[0])]
 
-        x = []
-        print('loading signals : ' + opt.in_files[i])
-        name = os.path.splitext(os.path.basename(opt.in_files[i]))[0]
-        if '.csv' in opt.in_files[i]:
-            csv_input = pd.read_csv(opt.in_files[i], header=None)
-            x = np.float32(csv_input.values)
-        elif '.mat' in opt.in_files[i]:
-            dic = sio.loadmat(opt.in_files[i])
-            x = np.float32(dic.get('X'))
+    # load cube atlas nifti file
+    if len(opt.targatl) == 0:
+        print('no modulation target atlas file. please specify nifti file.')
+        exit(-1)
+    if len(opt.atlas) == 0:
+        print('when target atlas is specified, an atlas file must be specified.')
+        exit(-1)
+    targetDat = nib.load(opt.targatl[0])
+    targetV = targetDat.get_fdata()  # TODO: need adjust direction?
+    atlasDat = nib.load(opt.atlas[0])
+    atlasV = atlasDat.get_fdata()  # TODO: need adjust direction?
+    dbsidxs = []
+    for j in range(len(rois)):
+        dbsidx = np.unique(atlasV[targetV==rois[j]])
+        dbsidxs.append(dbsidx.astype(np.int32))
+    if len(dbsidxs) == 0:
+        print('error: empty modulation target. bad ROI=' + opt.roi[0])
+        exit(-1)
+    '''
+    dt = 1.0 / 16
+    [t, hrf] = glm.canonical_hrf.get(dt)  # human's HRF;
+    plt.plot(t, hrf)
+    plt.grid(True)
+    plt.show()
+    plt.pause(1)
+    '''
+    # get save name from CX
+    savename = os.path.splitext(os.path.basename(opt.cx[0]))
+    savename = savename[0]
+    print('set savename=' + savename)
+    CX = []
+    mat_net = None
+    vnpm = [28, 22, 0.15]
+    hrfpm = [16, 8]
 
-        if len(x) == 0 or x is None:
-            print('file does not contain data. ignore : ' + opt.in_files[i])
-            continue
+    # load subject time-series (CX)
+    print('load subject time-series file: ' + opt.cx[0])
+    try:
+        dic = sio.loadmat(opt.cx[0])
+    except NotImplementedError:  # -v3.7
+        dic = h5py.File(opt.cx[0], 'r')
+    if dic.get('CX') is None:
+        print('no cells of subject time-series (CX) file. please specify .mat file.')
+        exit(-1)
+    if type(dic) is np.ndarray:
+        print('error: old mat file is currently not supported: ' + opt.cx[0])
+    else:  # h5py
+        cx = dic['CX']
+        for j in range(len(cx)):
+            hdf5ref = cx[j,0]
+            x = dic[hdf5ref]
+            CX.append(np.array(x).transpose())
+        dic.close()
 
-        if opt.format == 2:
-            if i == 0:
-                savename = name
+
+    # load group surrogate model (net)
+    print('load model file: ' + opt.model[0])
+    try:
+        dic = sio.loadmat(opt.model[0])
+    except NotImplementedError:  # -v3.7
+        dic = h5py.File(opt.model[0], 'r')
+    if dic.get('net') is None:
+        print('no group surrogate model file. please specify .mat file.')
+        exit(-1)
+    if type(dic) is np.ndarray:
+        print('error: old mat file is currently not supported: ' + opt.cx[0])
+    else:  # h5py
+        mat_net = dic['net']
+        net = models.MultivariateVARNetwork()
+        net.init_with_matnet(mat_net)
+        dic.close()
+
+
+    # init
+    isMatf = len(opt.in_files) > 0
+    if isMatf:
+        N = len(opt.in_files)
+    else:
+        N = opt.out
+
+
+    # process each file
+    for i in range(N):
+        perm = []
+        # read subject permutation file
+        if isMatf:
+            if not os.path.isfile(opt.in_files[i]):
+                print('bad file name. ignore : ' + opt.in_files[i])
+                continue
+
+            print('loading subject permutation : ' + opt.in_files[i])
+            try:
+                dic = sio.loadmat(opt.in_files[i])
+            except NotImplementedError:  # -v3.7
+                dic = h5py.File(opt.in_files[i], 'r')
+            if type(dic) is np.ndarray:
+                print('error: old mat file is currently not supported: ' +opt.in_files[i])
+            else:  # h5py
+                perm = np.array(dic['perm']).transpose()[0]  # Dataset to single array 1xlength
+                dic.close()
         else:
-            savename = name
+            permf = opt.outpath + '/perm' + str(i+1) + '_' + savename + '.mat'
+            if os.path.isfile(permf):
+                print('loading subject permutation : ' + permf)
+                try:
+                    dic = sio.loadmat(permf)
+                except NotImplementedError:  # -v3.7
+                    dic = h5py.File(permf, 'r')
+                if type(dic) is np.ndarray:
+                    print('error: old mat file is currently not supported: ' + permf)
+                else:  # h5py
+                    perm = np.array(dic['perm']).transpose()[0]  # Dataset to single array 1xlength
+                    dic.close()
 
-        # convert input & exogenous signals
-        if opt.transform == 1:
-            conv = SigmoidConverter()
-            x, sig, c, max_si, min_si = conv.to_sigmoid_signal(x=x, centroid=opt.transopt)
+        if len(perm) == 0 or perm is None:
+            # generate subject permutation
+            a=0 # TODO: generate perm
 
-        # show input signals
-        if opt.showsig:
-            plt.figure()
-            plt.plot(x.transpose(), linewidth=0.3)
-            plt.title('Input time-series : ' + name)
-            plt.xlabel('Time frames')
-            plt.ylabel('Signal value')
-            plt.show(block=False)
+        # loop for neuromodulation target rois
+        for j in range(len(rois)):
+            S = []
+            roi = rois[j]
+            dbsidx = dbsidxs[j]
 
-        plt.pause(1)
+            # get modulation (add & mul) time-series for vertual neuromodulation
+            print('generate modulation (add & mul) time-series, target roi=' + str(roi) + ', srframes=' +str(opt.srframes)+ ', dbsoffsec=' +str(vnpm[0])+ ', dbsonsec=' +str(vnpm[1])+ ', dbspw=' +str(vnpm[2]))
+            print('convolution params tr=' +str(opt.tr)+ ', res=' +str(hrfpm[0])+ ', sp=' +str(hrfpm[1]))
+            CA, Chrf, CM = surrogate.vnm_addmul_signals.get(CX, dbsidx, opt.surrnum, opt.srframes, vnpm[0], vnpm[1], vnpm[2], opt.tr, hrfpm[0], hrfpm[1])
 
-        # -------------------------------------------------------------------------
-        # calc VAR surrogate
-        if opt.var:
-            if opt.multi:
-                net = models.MultivariateVARNetwork()
-                net.init(x, lags=opt.lag)
-                y = surrogate.multivariate_var(x, net, surr_num=opt.surrnum, dist=opt.noise)
-                save_result_files(opt, y, savename+'_var_multi')
+            # load virtual neuromodulation surrogate
+            sessionName = savename+ '_' +str(roi)+ 'sr' +str(opt.surrnum)+ 'pr' +str(j+1)
+            outfname = opt.outpath+ '/' +sessionName+ '.mat'
+            if os.path.isfile(outfname):
+                print('load surrogate file : ' +outfname) # load prev surrogate result
+                try:
+                    dic = sio.loadmat(outfname)
+                except NotImplementedError:  # -v3.7
+                    dic = h5py.File(outfname, 'r')
+                if type(dic) is np.ndarray:
+                    print('error: old mat file is currently not supported')
+                else:  # h5py
+                    s = dic['S']
+                    for k in range(len(s)):
+                        hdf5ref = s[k,0]
+                        x = dic[hdf5ref]
+                        S.append(np.array(x).transpose())
+                    dic.close()
 
-        # calc Random Gaussian surrogate
-        if opt.rg:
-            if opt.multi:
-                y = surrogate.multivariate_random_gaussian(x, surr_num=opt.surrnum)
-                save_result_files(opt, y, savename+'_rg_multi')
-            if opt.uni:
-                y = surrogate.random_gaussian(x, surr_num=opt.surrnum)
-                save_result_files(opt, y, savename+'_rg_uni')
+            if len(S) == 0:
+                # calc virtual neuromodulation VAR surrogate
+                print('calc virtual neuromodulation surrogate. roi=' +str(roi)+ ', surrnum=' +str(opt.surrnum))
+                S = surrogate.vnm_var_surrogate.calc(net, CX, CA, CM, perm, opt.surrnum, opt.srframes)
 
-        # calc Random Shuffling surrogate
-        if opt.rs:
-            if opt.multi:
-                y = surrogate.multivariate_random_shuffling(x, surr_num=opt.surrnum)
-                save_result_files(opt, y, savename + '_rs_multi')
-            if opt.uni:
-                y = surrogate.random_shuffling(x, surr_num=opt.surrnum)
-                save_result_files(opt, y, savename + '_rs_uni')
-
-        # calc Fourier Transform surrogate
-        if opt.ft:
-            if opt.multi:
-                y = surrogate.multivariate_phase_randomized_ft(x, surr_num=opt.surrnum)
-                save_result_files(opt, y, savename + '_ft_multi')
-            if opt.uni:
-                y = surrogate.phase_randomized_ft(x, surr_num=opt.surrnum)
-                save_result_files(opt, y, savename + '_ft_uni')
-
-        # calc AAFT surrogate
-        if opt.aaft:
-            if opt.multi:
-                y = surrogate.multivariate_amplitude_adjusted_ft(x, surr_num=opt.surrnum)
-                save_result_files(opt, y, savename + '_aaft_multi')
-            if opt.uni:
-                y = surrogate.amplitude_adjusted_ft(x, surr_num=opt.surrnum)
-                save_result_files(opt, y, savename + '_aaft_uni')
-
-        # calc AAFT surrogate
-        if opt.iaaft:
-            if opt.multi:
-                y = surrogate.multivariate_iterated_amplitude_adjusted_ft(x, surr_num=opt.surrnum)
-                save_result_files(opt, y, savename + '_iaaft_multi')
-            if opt.uni:
-                y = surrogate.iterated_amplitude_adjusted_ft(x, surr_num=opt.surrnum)
-                save_result_files(opt, y, savename + '_iaaft_uni')
+                # Save the dictionary to a .mat file
+                # use 'matlab_compatible=True' to ensure it can be read by MATLAB
+                if not opt.nocache:
+                    matdata = {}
+                    matdata[u'S'] = S
+                    hdf5storage.write(matdata, filename=opt.outpath+'/'+sessionName+'.mat', matlab_compatible=True)
+                    print('save virtual neuromodulation surrogate file : ' +outfname)
 
     plt.pause(1)
     if opt.showsig:

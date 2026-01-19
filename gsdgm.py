@@ -13,7 +13,6 @@ import h5py
 import urllib.request
 
 from utils.parse_gsdgm_options import ParseOptions
-from utils.convert_sigmd import SigmoidConverter
 
 import models
 import surrogate
@@ -207,11 +206,6 @@ if __name__ == '__main__':
     # check each multivariate time-series
     for i in range(len(CX)):
         x = CX[i]
-        # convert input & exogenous signals
-        if opt.transform == 1:
-            conv = SigmoidConverter()
-            x, sig, c, max_si, min_si = conv.to_sigmoid_signal(x=x, centroid=opt.transopt)
-            CX[i] = x
 
         # show input signals
         if opt.showinsig:
