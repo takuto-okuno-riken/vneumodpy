@@ -43,7 +43,7 @@ def loop_fn(i, Yi, X, tuWin, tuM, isOutX2is):
     C = np.correlate(r, r, mode='full') / np.dot(r, r)
     mid = len(C) // 2
     Rxx = C[mid:mid + tuM]
-    Pxx = np.zeros(r.shape[0])
+    Pxx = np.zeros(r.shape[0], dtype=np.float32)
     Pxx[:tuM] = Rxx[:tuM] * tuWin[:tuM]
     V1 = toeplitz(Pxx)
     K1 = np.linalg.cholesky(V1, upper=False)
@@ -63,7 +63,7 @@ def loop_fn(i, Yi, X, tuWin, tuM, isOutX2is):
     # used for contrast
     C = np.correlate(r, r, mode='full') / np.dot(r, r)
     Rxx = C[mid:mid + tuM]
-    Pxx = np.zeros(r.shape[0])
+    Pxx = np.zeros(r.shape[0], dtype=np.float32)
     Pxx[:tuM] = Rxx[:tuM] * tuWin[:tuM]
 
     V2 = toeplitz(Pxx)
@@ -86,7 +86,7 @@ def calc(Y, X, tuM=None, isOutX2is=False):
     df = X.shape[0] - X.shape[1]
 
     # make Tukey window
-    tuWin = np.zeros(tuM)
+    tuWin = np.zeros(tuM, dtype=np.float32)
     for k in range(tuM):
         tuWin[k] = 0.5 * (1 + np.cos(np.pi * (k+1) / tuM))
 

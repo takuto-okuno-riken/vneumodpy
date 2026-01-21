@@ -211,7 +211,7 @@ if __name__ == '__main__':
                 # use 'matlab_compatible=True' to ensure it can be read by MATLAB
                 if not opt.nocache:
                     matdata = {}
-                    matdata[u'S'] = S
+                    matdata['S'] = S
                     hdf5storage.write(matdata, filename=opt.outpath+'/'+sessionName+'.mat', matlab_compatible=True)
                     print('save virtual neuromodulation surrogate file : ' +outfname)
 
@@ -278,11 +278,11 @@ if __name__ == '__main__':
                     # use 'matlab_compatible=True' to ensure it can be read by MATLAB
                     if not opt.nocache:
                         matdata = {}
-                        matdata[u'B'] = B
-                        matdata[u'RSS'] = RSS
-                        matdata[u'X2is'] = X2is
-                        matdata[u'tRs'] = tRs
-                        matdata[u'df'] = df
+                        matdata['B'] = B
+                        matdata['RSS'] = RSS
+                        matdata['X2is'] = X2is
+                        matdata['tRs'] = tRs
+                        matdata['df'] = df
                         hdf5storage.write(matdata, filename=betaBmat, matlab_compatible=True)
                         print('save 2nd level GLM result file : ' + betaBmat)
 

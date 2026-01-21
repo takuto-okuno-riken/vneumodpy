@@ -39,9 +39,9 @@ def get(CX, dbsidx, surrnum=40, srframes=160, dbsoffsec=28, dbsonsec=22, dbspw=0
 
     # DBS block design (off, on, off, on, ...)
     dbsidx = dbsidx - 1  # for matlab compatibility
-    CA = list(range(surrnum))
-    Chrf = list(range(surrnum))
-    CM = list(range(surrnum))
+    CA = [None]*surrnum
+    Chrf = [None]*surrnum
+    CM = [None]*surrnum
     for i in range(surrnum):
         n = CX[i].shape[0]
         bmax = int(np.floor((srframes * TR) / (dbsoffsec+dbsonsec)))
@@ -52,14 +52,14 @@ def get(CX, dbsidx, surrnum=40, srframes=160, dbsoffsec=28, dbsonsec=22, dbspw=0
             dur[j] = dbsonsec
         onsets = [ons]
         durations = [dur]
-        Chrf[i], U = glm.hrf_design_matrix.get(onsets, durations, srframes, TR, res, sp, hrf)
+        ch, U = glm.hrf_design_matrix.get(onsets, durations, srframes, TR, res, sp, hrf)
+        Chrf[i] = ch.astype(np.float32)
 #        sio.savemat('temp_chrf.mat',{'chrf':Chrf[i],'U':U}) # for debug
         block = np.full((n,srframes), np.nan, dtype=np.float32) # need to allocate new memory
         block[dbsidx,:] = np.tile(Chrf[i].T * dbspw * s, (len(dbsidx),1))
-        CA[i] = block
-        block = np.full((n,srframes), np.nan, dtype=np.float32) # need to allocate new memory
+        CA[i] = block.copy()
         block[dbsidx,:] = np.tile(1 - 0.5 * Chrf[i].T, (len(dbsidx),1))
-        CM[i] = block
+        CM[i] = block.copy()
 
 #    sio.savemat('temp_cacm.mat',{'CA0':CA,'Chrf0':Chrf,'CM0':CM}) # for debug
     return CA, Chrf, CM
