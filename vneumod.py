@@ -247,7 +247,7 @@ if __name__ == '__main__':
                     for k in range(surrNum):
                         Xorg = Chrf[k]
                         Xt = np.concatenate([Xorg, np.ones((Xorg.shape[0], 1), dtype=np.float32)],1)
-                        B2, RSS, df, _, _ = glm.tukey.calc(S[k][:,:,0].T, Xt, tuM=tuM, isOutX2is=False)
+                        B2, RSS, df, _, _ = glm.tukey_mp.calc(S[k][:,:,0].T, Xt, tuM=tuM, isOutX2is=False)
                         bmatC[k] = B2
 #                        lp = LineProfiler() # check profile
 #                        lp_wrapper = lp(glm.tukey.calc)
@@ -272,7 +272,7 @@ if __name__ == '__main__':
                     B1[np.isnan(B1)] = 0  # there might be nan
 
                     # calc 2nd-level estimation
-                    B, RSS, df, X2is, tRs = glm.tukey.calc(B1, X2, tuM=tuM, isOutX2is=True)
+                    B, RSS, df, X2is, tRs = glm.tukey_mp.calc(B1, X2, tuM=tuM, isOutX2is=True)
 
                     # Save the dictionary to a .mat file
                     # use 'matlab_compatible=True' to ensure it can be read by MATLAB
