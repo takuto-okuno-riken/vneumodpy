@@ -77,17 +77,17 @@ def calc(Y, X, tuM=None, isOutX2is=False):
         Xt = np.linalg.solve(K1, X)
         b, r = regress(Ya, Xt)
 
-        C = np.correlate(r, r, mode='full') / np.dot(r, r)
-        Rxx = C[mid:mid + tuM]
-        Pxx = np.zeros(r.shape[0])
-        Pxx[:tuM] = Rxx[:tuM] * tuWin[:tuM]
-
         B[i, :] = b
         RSS[i] = r.T @ r
         if not isOutX2is:
             continue
 
         # used for contrast
+        C = np.correlate(r, r, mode='full') / np.dot(r, r)
+        Rxx = C[mid:mid + tuM]
+        Pxx = np.zeros(r.shape[0])
+        Pxx[:tuM] = Rxx[:tuM] * tuWin[:tuM]
+
         V2 = toeplitz(Pxx)
         X2is[i, :, :] = inv(X.T @ (inv(V2) @ X))
         IR = np.eye(Xt.shape[0]) - Xt @ inv(Xt.T @ Xt) @ Xt.T
