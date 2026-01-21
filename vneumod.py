@@ -18,10 +18,15 @@ import models
 import surrogate
 
 import glm
-
+from line_profiler import LineProfiler
 
 # -------------------------------------------------------------------------
-# matrix calculation
+# util functions
+def h5pydata(dic, key):
+    s = dic[key]
+    hdf5ref = s[0, 0]
+    return dic[hdf5ref]
+
 '''
     elif opt.format == 1:  # mat each
         for i in range(y.shape[2]):
@@ -66,6 +71,7 @@ if __name__ == '__main__':
     targetV = targetDat.get_fdata()  # TODO: need adjust direction?
     atlasDat = nib.load(opt.atlas[0])
     atlasV = atlasDat.get_fdata()  # TODO: need adjust direction?
+
     dbsidxs = []
     for j in range(len(rois)):
         dbsidx = np.unique(atlasV[targetV==rois[j]])
@@ -73,22 +79,15 @@ if __name__ == '__main__':
     if len(dbsidxs) == 0:
         print('error: empty modulation target. bad ROI=' + opt.roi[0])
         exit(-1)
-    '''
-    dt = 1.0 / 16
-    [t, hrf] = glm.canonical_hrf.get(dt)  # human's HRF;
-    plt.plot(t, hrf)
-    plt.grid(True)
-    plt.show()
-    plt.pause(1)
-    '''
+
     # get save name from CX
     savename = os.path.splitext(os.path.basename(opt.cx[0]))
     savename = savename[0]
     print('set savename=' + savename)
     CX = []
     mat_net = None
-    vnpm = [28, 22, 0.15]
-    hrfpm = [16, 8]
+    vnpm = opt.vnparam
+    hrfpm = opt.hrfparam
 
     # load subject time-series (CX)
     print('load subject time-series file: ' + opt.cx[0])
@@ -106,7 +105,7 @@ if __name__ == '__main__':
         for j in range(len(cx)):
             hdf5ref = cx[j,0]
             x = dic[hdf5ref]
-            CX.append(np.array(x).transpose())
+            CX.append(np.array(x).T)
         dic.close()
 
 
@@ -153,7 +152,7 @@ if __name__ == '__main__':
             if type(dic) is np.ndarray:
                 print('error: old mat file is currently not supported: ' +opt.in_files[i])
             else:  # h5py
-                perm = np.array(dic['perm']).transpose()[0]  # Dataset to single array 1xlength
+                perm = np.array(dic['perm']).T[0]  # Dataset to single array 1xlength
                 dic.close()
         else:
             permf = opt.outpath + '/perm' + str(i+1) + '_' + savename + '.mat'
@@ -166,7 +165,7 @@ if __name__ == '__main__':
                 if type(dic) is np.ndarray:
                     print('error: old mat file is currently not supported: ' + permf)
                 else:  # h5py
-                    perm = np.array(dic['perm']).transpose()[0]  # Dataset to single array 1xlength
+                    perm = np.array(dic['perm']).T[0]  # Dataset to single array 1xlength
                     dic.close()
 
         if len(perm) == 0 or perm is None:
@@ -200,7 +199,7 @@ if __name__ == '__main__':
                     for k in range(len(s)):
                         hdf5ref = s[k,0]
                         x = dic[hdf5ref]
-                        S.append(np.array(x).transpose())
+                        S.append(np.array(x).T)
                     dic.close()
 
             if len(S) == 0:
@@ -216,6 +215,85 @@ if __name__ == '__main__':
                     hdf5storage.write(matdata, filename=opt.outpath+'/'+sessionName+'.mat', matlab_compatible=True)
                     print('save virtual neuromodulation surrogate file : ' +outfname)
 
-    plt.pause(1)
-    if opt.showsig:
-        input("Press Enter to exit...")
+            # calcurate 2nd level GLM and save nifti file
+            if opt.glm:
+                # load cube atlas file
+                atlasDat = nib.load(opt.atlas[0])
+                atlasV = atlasDat.get_fdata()  # TODO: need adjust direction?
+
+                tuM = 8 # GLM tukey-taper size
+                betaBmat = opt.outpath +'/'+ sessionName +'_2nd-Tukey' + str(tuM) +'.mat'
+                if os.path.isfile(betaBmat):
+                    print('load 2nd level GLM result file : ' + betaBmat)  # load prev surrogate result
+                    try:
+                        dic = sio.loadmat(betaBmat)
+                    except NotImplementedError:  # -v3.7
+                        dic = h5py.File(betaBmat, 'r')
+                    if type(dic) is np.ndarray:
+                        print('error: old mat file is currently not supported')
+                    else:  # h5py
+                        B = np.array(dic['B']).T
+                        RSS = np.array(dic['RSS']).T
+                        X2is = np.array(dic['X2is']).T
+                        tRs = np.array(dic['tRs']).T
+                        df = np.array(dic['df']).item()
+                        dic.close()
+                else:
+                    # calc 1st-level GLM
+                    print('calc 1st-level GLM...')
+
+                    surrNum = len(S)
+                    bmatC = [None] * surrNum
+                    for k in range(surrNum):
+                        Xorg = Chrf[k]
+                        Xt = np.concatenate([Xorg, np.ones((Xorg.shape[0], 1), dtype=np.float32)],1)
+                        B2, RSS, df, _, _ = glm.tukey.calc(S[k][:,:,0].T, Xt, tuM=tuM, isOutX2is=False)
+                        bmatC[k] = B2
+#                        lp = LineProfiler() # check profile
+#                        lp_wrapper = lp(glm.tukey.calc)
+#                        lp_wrapper(S[k][:,:,0].T, Xt, tuM=tuM, isOutX2is=False)
+#                        lp.print_stats()
+
+#                    dic = sio.loadmat('tempGLM1st.mat')
+#                    bmatC = dic['bmatC']
+
+                    # calc 2nd-level estimation
+                    print('calc 2nd-level GLM...')
+                    B1 = bmatC[0][:,[0,1]].T
+                    X2 = np.eye(B1.shape[0])
+                    for k in range(1,opt.surrnum):
+                        # 2nd-level Y vector
+                        B2 = bmatC[k][:,[0,1]].T # include design and intercept(we need more than 8 length for tukey taper)
+                        B1 = np.concatenate([B1, B2],0)
+
+                        # 2nd-level design matrix
+                        X2 = np.concatenate([X2,np.eye(B2.shape[0])],0)
+
+                    B1[np.isnan(B1)] = 0  # there might be nan
+
+                    # calc 2nd-level estimation
+                    B, RSS, df, X2is, tRs = glm.tukey.calc(B1, X2, tuM=tuM, isOutX2is=True)
+
+                    # Save the dictionary to a .mat file
+                    # use 'matlab_compatible=True' to ensure it can be read by MATLAB
+                    if not opt.nocache:
+                        matdata = {}
+                        matdata[u'B'] = B
+                        matdata[u'RSS'] = RSS
+                        matdata[u'X2is'] = X2is
+                        matdata[u'tRs'] = tRs
+                        matdata[u'df'] = df
+                        hdf5storage.write(matdata, filename=betaBmat, matlab_compatible=True)
+                        print('save 2nd level GLM result file : ' + betaBmat)
+
+                # GLM contrast images
+                contrasts = [np.array([1,0]).T] # GLM contrust
+                Ts = glm.contrast_image.calc(contrasts, B, RSS, X2is, tRs)
+                V2 = glm.roi_ts_to4dimage.get(Ts[0], atlasV)  # returns 4D image
+                V2 = V2[:,:,:,0]
+
+                # output nifti file
+                nifti_image = nib.Nifti1Image(V2.astype(np.float32), atlasDat.affine)
+                outniiname = opt.outpath +'/'+ sessionName +'_2nd-Tukey' + str(tuM) +'.nii.gz'
+                nib.save(nifti_image, outniiname)
+                print('save nifti file : '+outniiname)

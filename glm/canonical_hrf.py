@@ -17,5 +17,5 @@ def get(dt=0.045, response_delay=6, under_shoot_delay=16, kernel_sec=32, under_s
 
     t = np.arange(0, kernel_sec+dt, dt)
     hrf = gamma.pdf(t,response_delay,scale=hrf_scale) - gamma.pdf(t,under_shoot_delay,scale=hrf_scale) * under_shoot_ratio
-    hrf = hrf.transpose() / np.sum(hrf)
+    hrf = hrf.T / np.sum(hrf)
     return t, hrf

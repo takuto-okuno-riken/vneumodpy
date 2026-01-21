@@ -210,7 +210,7 @@ if __name__ == '__main__':
         # show input signals
         if opt.showinsig:
             plt.figure()
-            plt.plot(x.transpose(), linewidth=0.3)
+            plt.plot(x.T, linewidth=0.3)
             plt.title('Input time-series : ' + CXnames[i])
             plt.xlabel('Time frames')
             plt.ylabel('Signal value')
@@ -256,7 +256,7 @@ if __name__ == '__main__':
         else:
             sig_len = net.sig_len
         # generate dummy input time-series
-        x = np.random.multivariate_normal(mean=net.cx_m, cov=net.cx_cov, size=sig_len).transpose()
+        x = np.random.multivariate_normal(mean=net.cx_m, cov=net.cx_cov, size=sig_len).T
 
         # set range
         yrange = np.nan

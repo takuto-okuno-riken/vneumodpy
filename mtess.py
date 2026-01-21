@@ -128,7 +128,7 @@ if __name__ == '__main__':
     if opt.showinsig:
         for i in range(len(CX)):
             plt.figure()
-            plt.plot(CX[i].transpose(), linewidth=0.3)
+            plt.plot(CX[i].T, linewidth=0.3)
             plt.title('Input time-series : ' + CXnames[i])
             plt.xlabel('Time frames')
             plt.ylabel('Signal value')
@@ -211,7 +211,7 @@ if __name__ == '__main__':
     # show dendrogram
     if opt.showdend:
         mts[np.isnan(mts)] = 0  # mts might have nan
-        mts = mts + mts.transpose()
+        mts = mts + mts.T
         e = np.eye(mts.shape[0])
         mask = np.where(e == 1, 0, 1)
         x = (5 - mts) * mask

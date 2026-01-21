@@ -55,10 +55,10 @@ def get(CX, dbsidx, surrnum=40, srframes=160, dbsoffsec=28, dbsonsec=22, dbspw=0
         Chrf[i], U = glm.hrf_design_matrix.get(onsets, durations, srframes, TR, res, sp, hrf)
 #        sio.savemat('temp_chrf.mat',{'chrf':Chrf[i],'U':U}) # for debug
         block = np.full((n,srframes), np.nan, dtype=np.float32) # need to allocate new memory
-        block[dbsidx,:] = np.tile(Chrf[i].transpose() * dbspw * s, (len(dbsidx),1))
+        block[dbsidx,:] = np.tile(Chrf[i].T * dbspw * s, (len(dbsidx),1))
         CA[i] = block
         block = np.full((n,srframes), np.nan, dtype=np.float32) # need to allocate new memory
-        block[dbsidx,:] = np.tile(1 - 0.5 * Chrf[i].transpose(), (len(dbsidx),1))
+        block[dbsidx,:] = np.tile(1 - 0.5 * Chrf[i].T, (len(dbsidx),1))
         CM[i] = block
 
 #    sio.savemat('temp_cacm.mat',{'CA0':CA,'Chrf0':Chrf,'CM0':CM}) # for debug

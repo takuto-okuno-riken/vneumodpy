@@ -29,7 +29,7 @@ def calc(net, CX, CA, CM, perm, surrnum, srframes):
     Err = None
     for i in range(surrnum):
         X = CX[np.mod(i*2,cxlen)]
-        for k in np.arange(1,cxlen):
+        for k in range(1,cxlen):
             if X.shape[1] >= srframes:
                 break
             X = np.concatenate([X, CX[np.mod(i * 2 + k, cxlen)]], 1)

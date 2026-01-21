@@ -66,7 +66,7 @@ def calc(x, net, ex_signal=[], node_control=[], ex_control=[], dist='gaussian', 
     if dist == 'gaussian':
         m = np.mean(err, axis=1)
         ec = np.cov(err)
-        noise = np.random.multivariate_normal(mean=m, cov=ec, size=rvlen).transpose()
+        noise = np.random.multivariate_normal(mean=m, cov=ec, size=rvlen).T
     else:
         noise = err
     s2 = np.ones((input_num*lags+1, 1), dtype=x.dtype)
