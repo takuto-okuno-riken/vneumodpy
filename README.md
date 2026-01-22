@@ -78,7 +78,7 @@ Using the above-mentioned virtual neuromodulation, BOLD signal addition, i.e., D
 ## Command Line Tools Reference
 <b>gsdgm command</b><br>
 ~~~
-(gsdgm) gsdgmpy-main>python gsdgm.py -h
+(vneumod) vneumodpy-main>python gsdgm.py -h
 usage: gsdgm.py [-h] [--var] [--lag LAG] [--noise NOISE] [--outpath OUTPATH] [--transform TRANSFORM]
                 [--transopt TRANSOPT] [--format FORMAT] [--surrnum SURRNUM] [--siglen SIGLEN] [--range RANGE]
                 [--showinsig] [--showinras] [--showsig] [--showras]
@@ -126,10 +126,49 @@ The output (group surrogate data) .mat file includes the following cell data:
 |CX |{&lt;nodes&gt; x &lt;length&gt;} x &lt;cell number&gt; |group of multivariate time-series|
 |names |{'data name string'} x &lt;cell number&gt; |names of each time-series data|
 
+
+##
+<b>vneumod command</b><br>
+~~~
+(vneumod) vneumodpy-main>python vneumod.py -h
+usage: vneumod.py [-h] [--cx CX] [--model MODEL] [--atlas ATLAS] [--targatl TARGATL] [--roi ROI]
+                  [--out OUT] [--outfrom OUTFROM] [--surrnum SURRNUM] [--srframes SRFRAMES]
+                  [--vnparam VNPARAM] [--tr TR] [--hrfparam HRFPARAM] [--glm] [--outpath OUTPATH]
+                  [--nocache]
+                  [filename ...]
+
+positional arguments:
+  filename             filename of subject permutation (1 x length)
+
+options:
+  -h, --help           show this help message and exit
+  --cx CX              set cells of subject time-series (<filename>.mat)
+  --model MODEL        set (VAR) group surrogate model (<filename>_gsm_var.mat)
+  --atlas ATLAS        set cube atlas nifti file (<filename>.nii.gz)
+  --targatl TARGATL    set modulation target atlas nifti file (<filename>.nii.gz)
+  --roi ROI            set modulation target ROI <num> or <range text>
+  --out OUT            set output perm & surrogate files number <num> (default:1)
+  --outfrom OUTFROM    set surrogate output from <num> (default:1)
+  --surrnum SURRNUM    output surrogate sessions per one file <num> (default:40)
+  --srframes SRFRAMES  output surrogate frames <num> (default:160)
+  --vnparam VNPARAM    set virtual neuromodulation params <num,num,num> (default:28,22,0.15)
+  --tr TR              set TR (second) of fMRI time-series <num> (default:1)
+  --hrfparam HRFPARAM  set HRF (for convolution) params <num,num> (default:16,8)
+  --glm                output GLM result nifti file
+  --outpath OUTPATH    output files path (default:"results")
+  --nocache            do not output surrogate file
+~~~
+The input .mat files are optional. It should include subject permutation data for surrogate data generation:
+| name | matrix | description |
+|:---|:---|:---|
+|perm |&lt;1&gt; x &lt;length&gt; | time-series permutation order|
+
+The output will be T-value 3D matrix nifti file (GLM result) aligned with cube atlas nifti file.
+
 ##
 <b>mtess command</b><br>
 ~~~
-(gsdgm) gsdgmpy-main>python mtess.py -h
+(vneumod) vneumodpy-main>python mtess.py -h
 usage: mtess.py [-h] [--range RANGE] [--aclag ACLAG] [--paclag PACLAG] [--cclag CCLAG] [--pcclag PCCLAG]
                 [--outpath OUTPATH] [--format FORMAT] [--transform TRANSFORM] [--transopt TRANSOPT] [--showinsig]
                 [--showinras] [--showmat] [--showsig] [--showprop] [--shownode] [--showdend SHOWDEND] [--cache]
