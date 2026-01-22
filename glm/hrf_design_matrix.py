@@ -9,6 +9,8 @@
 #  sp           sampling starting point (in resolution)
 #  hrf          Canonical hemodynamic response function (optional)
 
+from __future__ import print_function, division   # for Python 2 compatible
+
 import numpy as np
 import glm
 

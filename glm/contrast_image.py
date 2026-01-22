@@ -10,6 +10,8 @@
 #  X2is         Vector or single value of inv(X' * X) for contrast
 #  tRs          Vector or single value of trace(R) for contrast
 
+from __future__ import print_function, division   # for Python 2 compatible
+
 import numpy as np
 from math import sqrt
 

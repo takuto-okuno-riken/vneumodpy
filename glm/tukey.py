@@ -17,6 +17,8 @@
 #  X         design matrix (time series x predictor variables)
 #  tuM       Tukey-Taper window size (default: sqrt(time series length))
 
+from __future__ import print_function, division   # for Python 2 compatible
+
 import numpy as np
 import time
 from scipy.linalg import toeplitz, cholesky, inv

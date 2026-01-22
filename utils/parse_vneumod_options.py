@@ -15,6 +15,7 @@ class ParseOptions:
         self.parser.add_argument('--targatl', type=str, nargs=1, default='', help='set modulation target atlas nifti file (<filename>.nii.gz)')
         self.parser.add_argument('--roi', type=str, nargs=1, default='', help='set modulation target ROI <num> or <range text>')
         self.parser.add_argument('--out', type=int, default=1, help='set output perm & surrogate files number <num> (default:1)')
+        self.parser.add_argument('--outfrom', type=int, default=1, help='set surrogate output from <num> (default:1)')
         self.parser.add_argument('--surrnum', type=int, default=40, help='output surrogate sessions per one file <num> (default:40)')
         self.parser.add_argument('--srframes', type=int, default=160, help='output surrogate frames <num> (default:160)')
         self.parser.add_argument('--vnparam', type=alist, default=[28,22,0.15], help='set virtual neuromodulation params <num,num,num> (default:28,22,0.15)')

@@ -7,6 +7,8 @@
 #  stepZ        Z axes resampling rate
 #  operation    operation for each plane ('mode'(default),'max','min','mean','median')
 
+from __future__ import print_function, division   # for Python 2 compatible
+
 import numpy as np
 from scipy.stats import mode
 

@@ -10,6 +10,8 @@
 #  underShootRatio    ratio of underShoot (default: 0.167)
 #  hrfScale           HRF scale (gamma b) (default: 0.9)
 
+from __future__ import print_function, division   # for Python 2 compatible
+
 import numpy as np
 from scipy.stats import gamma
 

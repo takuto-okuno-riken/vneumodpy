@@ -6,6 +6,8 @@
 #  X            ROI time-series (ROIs x frames)
 #  atlasV       nifti 3D atlas (X x Y x Z)
 
+from __future__ import print_function, division   # for Python 2 compatible
+
 import numpy as np
 
 def get(X, atlasV):

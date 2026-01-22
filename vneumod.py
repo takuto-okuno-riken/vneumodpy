@@ -22,28 +22,6 @@ from line_profiler import LineProfiler
 
 # -------------------------------------------------------------------------
 # util functions
-def h5pydata(dic, key):
-    s = dic[key]
-    hdf5ref = s[0, 0]
-    return dic[hdf5ref]
-
-'''
-    elif opt.format == 1:  # mat each
-        for i in range(y.shape[2]):
-            f_name = out_path_f + '_' + str(i+1) + '.mat'
-            print('output mat file : ' + f_name)
-            sio.savemat(f_name, {'X': y[:, :, i]})
-
-    elif opt.format == 2:  # mat all
-        f_name = out_path_f + '_all.mat'
-        print('output mat file : ' + f_name)
-        names = np.empty((y.shape[2]), dtype=object)
-        cx = np.empty((y.shape[2]), dtype=object)
-        for i in range(y.shape[2]):
-            cx[i] = y[:, :, i]
-            names[i] = outname+'_'+str(i+1)
-        sio.savemat(f_name, {'CX': cx, 'names': names})
-'''
 
 # -------------------------------------------------------------------------
 # main
@@ -56,9 +34,13 @@ if __name__ == '__main__':
 
     # extract rois
     if ':' in opt.roi[0]:
-        rois=[0]
+        t = opt.roi[0].split(':')
+        rois = list(range(int(t[0]), int(t[1])+1))
+    elif ',' in opt.roi[0]:
+        t = opt.roi[0].split(',')
+        rois = [int(item) for item in t]
     else:
-        rois=[int(opt.roi[0])]
+        rois = [int(opt.roi[0])]
 
     # load cube atlas nifti file
     if len(opt.targatl) == 0:
@@ -108,7 +90,6 @@ if __name__ == '__main__':
             CX.append(np.array(x).T)
         dic.close()
 
-
     # load group surrogate model (net)
     print('load model file: ' + opt.model[0])
     try:
@@ -126,7 +107,6 @@ if __name__ == '__main__':
         net.init_with_matnet(mat_net)
         dic.close()
 
-
     # init
     isMatf = len(opt.in_files) > 0
     if isMatf:
@@ -134,9 +114,12 @@ if __name__ == '__main__':
     else:
         N = opt.out
 
+    if opt.outfrom-1 >= N:
+        print('outfrom is too big (' +str(opt.outfrom)+'). please specify less than out num.')
+        exit(-1)
 
     # process each file
-    for i in range(N):
+    for i in range(opt.outfrom-1, N):
         perm = []
         # read subject permutation file
         if isMatf:
@@ -170,7 +153,13 @@ if __name__ == '__main__':
 
         if len(perm) == 0 or perm is None:
             # generate subject permutation
-            a=0 # TODO: generate perm
+            permf = opt.outpath + '/perm' + str(i + 1) + '_' + savename + '.mat'
+            perm, uxtime = surrogate.vnm_subject_perm.get(CX)
+            matdata = {}
+            matdata['perm'] = perm
+            matdata['uxtime'] = uxtime
+            hdf5storage.write(matdata, filename=permf, matlab_compatible=True)
+            print('save perm file : ' + permf)
 
         # loop for neuromodulation target rois
         for j in range(len(rois)):
@@ -184,7 +173,7 @@ if __name__ == '__main__':
             CA, Chrf, CM = surrogate.vnm_addmul_signals.get(CX, dbsidx, opt.surrnum, opt.srframes, vnpm[0], vnpm[1], vnpm[2], opt.tr, hrfpm[0], hrfpm[1])
 
             # load virtual neuromodulation surrogate
-            sessionName = savename+ '_' +str(roi)+ 'sr' +str(opt.surrnum)+ 'pr' +str(j+1)
+            sessionName = savename+ '_' +str(roi)+ 'sr' +str(opt.surrnum)+ 'pr' +str(i+1)
             outfname = opt.outpath+ '/' +sessionName+ '.mat'
             if os.path.isfile(outfname):
                 print('load surrogate file : ' +outfname) # load prev surrogate result
@@ -288,8 +277,8 @@ if __name__ == '__main__':
 
                 # GLM contrast images
                 contrasts = [np.array([1,0]).T] # GLM contrust
-                Ts = glm.contrast_image.calc(contrasts, B, RSS, X2is, tRs)
-                V2 = glm.roi_ts_to4dimage.get(Ts[0], atlasV)  # returns 4D image
+                Ts = glm.contrast_image.calc(contrasts, B, RSS, X2is, tRs) # this is fast enough
+                V2 = glm.roi_ts_to4dimage.get(Ts[0], atlasV)  # returns 4D image. this is slow
                 V2 = V2[:,:,:,0]
 
                 # output nifti file
