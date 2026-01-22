@@ -50,9 +50,11 @@ if __name__ == '__main__':
         print('when target atlas is specified, an atlas file must be specified.')
         exit(-1)
     targetDat = nib.load(opt.targatl[0])
-    targetV = targetDat.get_fdata()  # TODO: need adjust direction?
+    targetV = targetDat.get_fdata()
+    targetV = glm.adjust_volume_dir(targetV, targetDat)
     atlasDat = nib.load(opt.atlas[0])
-    atlasV = atlasDat.get_fdata()  # TODO: need adjust direction?
+    atlasV = atlasDat.get_fdata()
+    atlasV = glm.adjust_volume_dir(atlasV, atlasDat)
 
     dbsidxs = []
     for j in range(len(rois)):
@@ -208,7 +210,8 @@ if __name__ == '__main__':
             if opt.glm:
                 # load cube atlas file
                 atlasDat = nib.load(opt.atlas[0])
-                atlasV = atlasDat.get_fdata()  # TODO: need adjust direction?
+                atlasV = atlasDat.get_fdata()
+                atlasV = glm.adjust_volume_dir(atlasV, atlasDat)
 
                 tuM = 8 # GLM tukey-taper size
                 betaBmat = opt.outpath +'/'+ sessionName +'_2nd-Tukey' + str(tuM) +'.mat'
@@ -282,7 +285,8 @@ if __name__ == '__main__':
                 V2 = V2[:,:,:,0]
 
                 # output nifti file
-                nifti_image = nib.Nifti1Image(V2.astype(np.float32), atlasDat.affine)
+                V2 = glm.adjust_volume_dir(V2.astype(np.float32), atlasDat)
+                nifti_image = nib.Nifti1Image(V2, atlasDat.affine)
                 outniiname = opt.outpath +'/'+ sessionName +'_2nd-Tukey' + str(tuM) +'.nii.gz'
                 nib.save(nifti_image, outniiname)
                 print('save nifti file : '+outniiname)

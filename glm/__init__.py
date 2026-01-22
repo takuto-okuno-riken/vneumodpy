@@ -4,4 +4,5 @@ from glm.tukey import calc
 from glm.tukey_mp import calc  # multi processing version
 from glm.contrast_image import calc
 from glm.roi_ts_to4dimage import get
+from glm.adjust_volume_dir import adjust_volume_dir
 from glm.resampling_nifti_volume import resampling_nifti_volume
