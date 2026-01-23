@@ -79,31 +79,31 @@ Using the above-mentioned virtual neuromodulation, BOLD signal addition, i.e., D
 <b>gsdgm command</b><br>
 ~~~
 (vneumod) vneumodpy-main>python gsdgm.py -h
-usage: gsdgm.py [-h] [--var] [--lag LAG] [--noise NOISE] [--outpath OUTPATH] [--transform TRANSFORM]
-                [--transopt TRANSOPT] [--format FORMAT] [--surrnum SURRNUM] [--siglen SIGLEN] [--range RANGE]
+usage: gsdgm.py [-h] [--var] [--lag LAG] [--noise NOISE] [--outpath OUTPATH] [--transopt TRANSOPT]
+                [--format FORMAT] [--surrnum SURRNUM] [--siglen SIGLEN] [--range RANGE]
                 [--showinsig] [--showinras] [--showsig] [--showras]
                 filename [filename ...]
 
 positional arguments:
-  filename              filename of node status time-series (node x frames)
+  filename             filename of node status time-series (node x frames)
 
-optional arguments:
-  -h, --help            show this help message and exit
-  --var                 output Vector Auto-Regression (VAR) group surrogate model (<filename>_gsm_var.mat)
-  --lag LAG             time lag <num> for VAR (default:3)
-  --noise NOISE         noise type for VAR surrogate model (default:"gaussian" or "residuals")
-  --outpath OUTPATH     output files path (default:"results")
-  --transform TRANSFORM
-                        input signal transform 0:raw, 1:sigmoid (default:0)
-  --transopt TRANSOPT   signal transform option (for type 1:centroid value)
-  --format FORMAT       save file format <type> 0:csv, 1:mat(each), 2:mat(all) (default:2)
-  --surrnum SURRNUM     output surrogate sample number <num> (default:1)
-  --siglen SIGLEN       output time-series length <num> (default:same as input time-series)
-  --range RANGE         output surrogate value range (default:"auto", sigma:<num>, full:<num>, <min>:<max> or "none")
-  --showinsig           show input time-series data of <filename>.csv
-  --showinras           show raster plot of input time-series data of <filename>.csv
-  --showsig             show output surrogate time-series data
-  --showras             show raster plot of output surrogate time-series data
+options:
+  -h, --help           show this help message and exit
+  --var                output Vector Auto-Regression (VAR) group surrogate model
+                       (<filename>_gsm_var.mat)
+  --lag LAG            time lag <num> for VAR (default:1)
+  --noise NOISE        noise type for VAR surrogate model (default:"gaussian" or "residuals")
+  --outpath OUTPATH    output files path (default:"results")
+  --transopt TRANSOPT  signal transform option (for type 1:centroid value)
+  --format FORMAT      save file format <type> 0:csv, 1:mat(each), 2:mat(all) (default:2)
+  --surrnum SURRNUM    output surrogate sample number <num> (default:0)
+  --siglen SIGLEN      output time-series length <num> (default:same as input time-series)
+  --range RANGE        output surrogate value range (default:"auto", sigma:<num>, full:<num>,
+                       <min>:<max> or "none")
+  --showinsig          show input time-series data of <filename>.csv
+  --showinras          show raster plot of input time-series data of <filename>.csv
+  --showsig            show output surrogate time-series data
+  --showras            show raster plot of output surrogate time-series data
 ~~~
 The input .mat file should include input cell data described as follows. The node count must be the same within the group, whereas the time-series length does not have to be the same.
 | name | cell | description |
