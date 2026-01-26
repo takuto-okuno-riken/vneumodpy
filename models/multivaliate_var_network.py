@@ -148,20 +148,34 @@ class MultivariateVARNetwork(object):
         else:
             print('prepare regression')
             start = time.time()
-            _, _, perm, RiQ, dR2i = models.regress.prepare(xti1)
+            _, _, perm, RiQ, _ = models.regress.prepare(xti1)
             print('regress.prepare t=' + str(time.time() - start) + ' sec')
+
+            '''
+            path_name = 'results/cache-mvar-prepare-' + str(xti.shape[0]) + 'x' + str(xti.shape[1]) + '-l' + str(lags)
+            if not os.path.isdir(path_name):
+                os.makedirs(path_name, exist_ok=True)
+            filename = path_name + os.sep + 'perm.dat'
+            with open(filename, 'wb') as p:
+                pickle.dump(array.array('i', perm.flatten()), p)
+            filename = path_name + os.sep + 'RiQ.dat'
+            with open(filename, 'wb') as p:
+                pickle.dump(array.array('f', RiQ.flatten()), p)
+            '''
+            '''
             if usecache:
+                # memory is too big. hdf5storage.write does not work
                 matdata = {}
                 perm = perm.astype(np.float32) + 1  # python to matlab compatible
                 matdata['perm'] = perm
                 matdata['RiQ'] = RiQ
-                matdata['dR2i'] = dR2i
                 hdf5storage.write(matdata, filename=cacheName, matlab_compatible=True)
+           '''
 
         # call multithread to calc regressions in each node. multiprocess does not change speed so much
         # !! caution !! this consumes huge memory.
         start = time.time()
-        futures = models.mvar_init_with_cell_mth.call_executor(self.node_num, xt, xti1, perm, RiQ, dR2i, n_threads=n_jobs)
+        futures = models.mvar_init_with_cell_mth.call_executor(self.node_num, xt, xti1, perm, RiQ, None, n_threads=n_jobs)
 
         self.bvec = [None] * len(futures)
         self.residuals = [None] * len(futures)

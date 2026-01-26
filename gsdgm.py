@@ -211,8 +211,7 @@ if __name__ == '__main__':
         if opt.var:
             ntype = 'var'
             net = models.MultivariateVARNetwork()
-            net.load('tempnet')
-#            net.init_with_cell(CX, lags=opt.lag, usecache=opt.cache, n_jobs=opt.njobs)
+            net.init_with_cell(CX, lags=opt.lag, usecache=opt.cache, n_jobs=opt.njobs)
             # file size may be too big. hdf5storage.write does not work well
             f_name = opt.outpath + os.sep + savename+'_gsm_'+ntype
             net.save(f_name)

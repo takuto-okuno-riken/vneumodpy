@@ -12,7 +12,7 @@ def linear(y, X, Q=None, R=None, perm=None, RiQ=None, dR2i=None):
         if R.size == 0:
             p = 0
         else:
-            p = np.sum(np.abs(np.diag(R)) > max(sz1, sz2) * np.finfo(R.dtype).eps)
+            p = np.sum(np.abs(np.diag(R)) > max(sz1, sz2) * np.spacing(R[0, 0]))
         if p < sz2:
             R = R[:p, :p]
             Q = Q[:, :p]
@@ -41,7 +41,7 @@ def prepare(X):
     if R.size == 0:
         p = 0
     else:
-        p = np.sum(np.abs(np.diag(R)) > max(sz1, sz2) * np.finfo(R.dtype).eps)
+        p = np.sum(np.abs(np.diag(R)) > max(sz1, sz2) * np.spacing(R[0, 0]))
 
     if p < sz2:
         R = R[:p, :p]
@@ -67,7 +67,7 @@ def prepare(X):
 def inv_qr(X):
     sz1, sz2 = X.shape
     Q, R, perm = qr(X, mode='economic', pivoting=True)
-    p = np.sum(np.abs(np.diag(R)) > max(sz1, sz2) * np.finfo(R.dtype).eps)
+    p = np.sum(np.abs(np.diag(R)) > max(sz1, sz2) * np.spacing(R[0, 0]))
     if p < sz2:
         R = R[:p, :p]
         Q = Q[:, :p]
