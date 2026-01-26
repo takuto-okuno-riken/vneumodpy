@@ -45,28 +45,6 @@ def save_result_files(opt, y, outname):
         sio.savemat(f_name, {'CX': cx, 'names': names})
 
 
-def save_model_file(opt, net, gr, outname):
-    f_name = opt.outpath + os.sep + outname + '.mat'
-    print('output group surrogate model file : ' + f_name)
-    # convert to dictionary
-    dic = dict()
-    dic['nodeNum'] = net.node_num
-    dic['sigLen'] = net.sig_len
-    dic['exNum'] = net.ex_num
-    dic['lags'] = net.lags
-    dic['cxM'] = net.cx_m
-    dic['cxCov'] = net.cx_cov
-    bvec = np.empty(net.node_num, dtype=object)
-    rvec = np.empty(net.node_num, dtype=object)
-    for k in range(net.node_num):
-        b = np.concatenate([net.lr_objs[k].coef_.flatten(), [net.lr_objs[k].intercept_]])
-        bvec[k] = b
-        rvec[k] = net.residuals[k]  # list to nested array (cell)
-    dic['bvec'] = bvec
-    dic['rvec'] = rvec
-    sio.savemat(f_name, {'net': dic, 'gRange': gr})
-
-
 def url2cache_string(url):
     u = url.split('?')
     u = u[0].replace('http://', '')
@@ -77,33 +55,6 @@ def url2cache_string(url):
         b = b+'-'+u[j]
     return b
 
-
-def get_group_range(cx):
-    a = cx[0]
-    for i in range(1, len(cx)):
-        a = np.concatenate([a, cx[i]])
-    r = {
-        'min': np.min(a),
-        'max': np.max(a),
-        'm': np.nanmean(a),
-        's': np.nanstd(a)}
-    return r
-
-
-def get_group_range_dic(dic):
-    if type(dic) is np.ndarray:
-        r = {
-            'min': dic['min'][0, 0][0, 0],
-            'max': dic['max'][0, 0][0, 0],
-            'm': dic['m'][0, 0][0, 0],
-            's': dic['s'][0, 0][0, 0]}
-    else:  # h5py
-        r = {
-            'min': dic['min'][0, 0],
-            'max': dic['max'][0, 0],
-            'm': dic['m'][0, 0],
-            's': dic['s'][0, 0]}
-    return r
 
 # -------------------------------------------------------------------------
 # main
@@ -160,27 +111,48 @@ if __name__ == '__main__':
                     dic = h5py.File(infile, 'r')
 
                 if dic.get('CX') is not None:
+                    print('load subject time-series file: ' + infile)
                     # training mode
-                    cx = dic.get('CX').flatten()
-                    if dic.get('multiple') is not None:
-                        mlt = np.float32(dic.get('multiple'))  # smaller memory
+                    if type(dic) is np.ndarray:
+                        cx = dic.get('CX').flatten()
+                        if dic.get('multiple') is not None:
+                            mlt = np.float32(dic.get('multiple'))  # smaller memory
+                            for j in range(len(cx)):
+                                x = cx[j] / mlt
+                                CX.append(x)
+                        else:
+                            for j in range(len(cx)):
+                                CX.append(np.float32(cx[j]))
+                        if dic.get('names') is not None:
+                            names = dic.get('names').flatten()
+                            for j in range(len(names)):
+                                s = str(names[j])
+                                s = s.replace('[', '')  # remove some useless chars
+                                s = s.replace(']', '')  # remove some useless chars
+                                s = s.replace("'", "")  # remove some useless chars
+                                CXnames.append(s)
+                        else:
+                            for j in range(len(CX)):
+                                CXnames.append(name + '-' + str(j + 1))
+                    else:  # h5py
+                        cx = dic['CX']
                         for j in range(len(cx)):
-                            x = cx[j] / mlt
-                            CX.append(x)
-                    else:
-                        for j in range(len(cx)):
-                            CX.append(np.float32(cx[j]))
-                    if dic.get('names') is not None:
-                        names = dic.get('names').flatten()
-                        for j in range(len(names)):
-                            s = str(names[j])
-                            s = s.replace('[', '')  # remove some useless chars
-                            s = s.replace(']', '')  # remove some useless chars
-                            s = s.replace("'", "")  # remove some useless chars
-                            CXnames.append(s)
-                    else:
-                        for j in range(len(CX)):
-                            CXnames.append(name + '-' + str(j + 1))
+                            hdf5ref = cx[j, 0]
+                            x = dic[hdf5ref]
+                            CX.append(np.array(x).T)
+                        if dic.get('names') is not None:
+                            cxnames = dic['names']
+                            for j in range(len(cxnames)):
+                                hdf5ref = cxnames[j, 0]
+                                s = dic[hdf5ref]
+                                s = s.replace('[', '')  # remove some useless chars
+                                s = s.replace(']', '')  # remove some useless chars
+                                s = s.replace("'", "")  # remove some useless chars
+                                CXnames.append(s)
+                        else:
+                            for j in range(len(CX)):
+                                CXnames.append(name + '-' + str(j + 1))
+                        dic.close()
 
                 elif dic.get('X') is not None:
                     CX.append(np.float32(dic['X']))
@@ -226,20 +198,26 @@ if __name__ == '__main__':
             plt.ylabel('Node number')
             plt.show(block=False)
 
-        plt.pause(1)
+        if opt.showinsig or opt.showinras:
+            plt.pause(1)
 
     # ------------------------------------------------------------------------------
     # training mode
     net = None
     if len(CX) > 0:
-        gr = get_group_range(CX)
+        gr = models.group_range.get(CX)
 
         # generate model data
         if opt.var:
             ntype = 'var'
             net = models.MultivariateVARNetwork()
-            net.init_with_cell(CX, lags=opt.lag)
-            save_model_file(opt, net, gr, savename+'_gsm_'+ntype)
+            net.load('tempnet')
+#            net.init_with_cell(CX, lags=opt.lag, usecache=opt.cache, n_jobs=opt.njobs)
+            # file size may be too big. hdf5storage.write does not work well
+            f_name = opt.outpath + os.sep + savename+'_gsm_'+ntype
+            net.save(f_name)
+#            f_name = opt.outpath + os.sep + savename+'_gsm_'+ntype + '.mat'
+#            net.save_mat(f_name, gRange=gr)
 
     # ------------------------------------------------------------------------------
     # surrogate data mode
@@ -247,10 +225,10 @@ if __name__ == '__main__':
         # currently, we only support var network
         ntype = 'var'
         net = models.MultivariateVARNetwork()
-        net.init_with_matnet(mat_net)
-        gr = get_group_range_dic(mat_range)
+        net.init_with_mat(mat_net)
+        gr = models.group_range.get_dic(mat_range)
 
-    if net is not None:
+    if net is not None and opt.surrnum > 0:
         if opt.siglen > 0:
             sig_len = opt.siglen
         else:

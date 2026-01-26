@@ -10,6 +10,7 @@ class ParseOptions:
         alist = lambda x: list(map(float, x.split(',')))
         self.parser.add_argument('in_files', metavar='filename', nargs='*', help='filename of subject permutation (1 x length)')
         self.parser.add_argument('--cx', type=str, nargs=1, default='', help='set cells of subject time-series (<filename>.mat)')
+        self.parser.add_argument('--pymodel', type=str, nargs=1, default='', help='set (VAR) group surrogate model <path> by vneumodpy')
         self.parser.add_argument('--model', type=str, nargs=1, default='', help='set (VAR) group surrogate model (<filename>_gsm_var.mat)')
         self.parser.add_argument('--atlas', type=str, nargs=1, default='', help='set cube atlas nifti file (<filename>.nii.gz)')
         self.parser.add_argument('--targatl', type=str, nargs=1, default='', help='set modulation target atlas nifti file (<filename>.nii.gz)')

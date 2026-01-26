@@ -10,8 +10,8 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import h5py
-import nibabel as nib
 import hdf5storage
+import nibabel as nib
 
 from utils.parse_vneumod_options import ParseOptions
 import models
@@ -93,21 +93,26 @@ if __name__ == '__main__':
         dic.close()
 
     # load group surrogate model (net)
-    print('load model file: ' + opt.model[0])
-    try:
-        dic = sio.loadmat(opt.model[0])
-    except NotImplementedError:  # -v3.7
-        dic = h5py.File(opt.model[0], 'r')
-    if dic.get('net') is None:
-        print('no group surrogate model file. please specify .mat file.')
-        exit(-1)
-    if type(dic) is np.ndarray:
-        print('error: old mat file is currently not supported: ' + opt.cx[0])
-    else:  # h5py
-        mat_net = dic['net']
+    if len(opt.model) > 0:
+        print('load model file: ' + opt.model[0])
+        try:
+            dic = sio.loadmat(opt.model[0])
+        except NotImplementedError:  # -v7.3
+            dic = h5py.File(opt.model[0], 'r')
+        if dic.get('net') is None:
+            print('no group surrogate model file. please specify .mat file.')
+            exit(-1)
+        if type(dic) is np.ndarray:
+            print('error: old mat file is currently not supported: ' + opt.cx[0])
+        else:  # h5py
+            mat_net = dic['net']
+            net = models.MultivariateVARNetwork()
+            net.init_with_mat(mat_net)
+            dic.close()
+    elif len(opt.pymodel) > 0:
+        print('load model path: ' + opt.pymodel[0])
         net = models.MultivariateVARNetwork()
-        net.init_with_matnet(mat_net)
-        dic.close()
+        net.load(opt.pymodel[0])
 
     # init
     isMatf = len(opt.in_files) > 0

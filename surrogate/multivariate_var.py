@@ -60,8 +60,7 @@ def calc(x, net, ex_signal=[], node_control=[], ex_control=[], dist='gaussian', 
     c = np.zeros((node_num, input_num*lags+1), dtype=x.dtype)
     for i in range(node_num):
         idx = np.where(control[i, :] == 1)
-        c[i, idx[0]] = net.lr_objs[i].coef_
-        c[i, c.shape[1]-1] = net.lr_objs[i].intercept_
+        c[i, idx[0]] = net.bvec[i]
     # set noise matrix
     if dist == 'gaussian':
         m = np.mean(err, axis=1)

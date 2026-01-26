@@ -56,8 +56,7 @@ def calc(X, exSignal, net, A, M, dist='gaussian', surrNum=1, yRange=None, nBaset
     if Cin is None:
         C = np.zeros((nodeNum, inputNum * lags + 1), dtype=np.float32)
         for i in range(nodeNum):
-            C[i, 0:C.shape[1]-1] = net.lr_objs[i].coef_
-            C[i, C.shape[1] - 1] = net.lr_objs[i].intercept_
+            C[i, :] = net.bvec[i]
     else:
         C = Cin
 
