@@ -18,7 +18,7 @@ class ParseOptions:
         self.parser.add_argument('--siglen', type=int, default=0, help='output time-series length <num> (default:same as input time-series)')
         self.parser.add_argument('--range', type=str, nargs=1, default='auto', help='output surrogate value range (default:"auto", sigma:<num>, full:<num>, <min>:<max> or "none")')
         self.parser.add_argument('--cache',  action='store_true', help='save cache file at model calculation')
-        self.parser.add_argument('--njobs', type=int, default=-1, help='number of jobs (multiprocessing) for model calculation (default:-1)')
+        self.parser.add_argument('--njobs', type=int, default=8, help='number of jobs (multiprocessing) for model calculation (default:-1)')
         self.parser.add_argument('--showinsig',  action='store_true', help='show input time-series data of <filename>.csv')
         self.parser.add_argument('--showinras',  action='store_true', help='show raster plot of input time-series data of <filename>.csv')
         self.parser.add_argument('--showsig',  action='store_true', help='show output surrogate time-series data')
