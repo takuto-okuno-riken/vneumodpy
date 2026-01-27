@@ -80,8 +80,8 @@ Using the above-mentioned virtual neuromodulation, BOLD signal addition, i.e., D
 ~~~
 (vneumod) vneumodpy-main>python gsdgm.py -h
 usage: gsdgm.py [-h] [--var] [--lag LAG] [--noise NOISE] [--outpath OUTPATH] [--transopt TRANSOPT]
-                [--format FORMAT] [--surrnum SURRNUM] [--siglen SIGLEN] [--range RANGE]
-                [--showinsig] [--showinras] [--showsig] [--showras]
+                [--format FORMAT] [--surrnum SURRNUM] [--siglen SIGLEN] [--range RANGE] [--cache]
+                [--njobs NJOBS] [--showinsig] [--showinras] [--showsig] [--showras]
                 filename [filename ...]
 
 positional arguments:
@@ -100,6 +100,8 @@ options:
   --siglen SIGLEN      output time-series length <num> (default:same as input time-series)
   --range RANGE        output surrogate value range (default:"auto", sigma:<num>, full:<num>,
                        <min>:<max> or "none")
+  --cache              save cache file at model calculation
+  --njobs NJOBS        number of jobs (multiprocessing) for model calculation (default:8)
   --showinsig          show input time-series data of <filename>.csv
   --showinras          show raster plot of input time-series data of <filename>.csv
   --showsig            show output surrogate time-series data
@@ -131,10 +133,10 @@ The output (group surrogate data) .mat file includes the following cell data:
 <b>vneumod command</b><br>
 ~~~
 (vneumod) vneumodpy-main>python vneumod.py -h
-usage: vneumod.py [-h] [--cx CX] [--model MODEL] [--atlas ATLAS] [--targatl TARGATL] [--roi ROI]
-                  [--out OUT] [--outfrom OUTFROM] [--surrnum SURRNUM] [--srframes SRFRAMES]
-                  [--vnparam VNPARAM] [--tr TR] [--hrfparam HRFPARAM] [--glm] [--outpath OUTPATH]
-                  [--nocache]
+usage: vneumod.py [-h] [--cx CX] [--pymodel PYMODEL] [--model MODEL] [--atlas ATLAS]
+                  [--targatl TARGATL] [--roi ROI] [--out OUT] [--outfrom OUTFROM]
+                  [--surrnum SURRNUM] [--srframes SRFRAMES] [--vnparam VNPARAM] [--tr TR]
+                  [--hrfparam HRFPARAM] [--glm] [--outpath OUTPATH] [--nocache]
                   [filename ...]
 
 positional arguments:
@@ -143,6 +145,7 @@ positional arguments:
 options:
   -h, --help           show this help message and exit
   --cx CX              set cells of subject time-series (<filename>.mat)
+  --pymodel PYMODEL    set (VAR) group surrogate model <path> by vneumodpy
   --model MODEL        set (VAR) group surrogate model (<filename>_gsm_var.mat)
   --atlas ATLAS        set cube atlas nifti file (<filename>.nii.gz)
   --targatl TARGATL    set modulation target atlas nifti file (<filename>.nii.gz)
