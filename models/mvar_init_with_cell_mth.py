@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 try:
-    from .. import models
+    from ..models.regress import linear
 except ImportError:
     from models.regress import linear
 

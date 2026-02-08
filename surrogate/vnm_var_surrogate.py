@@ -18,7 +18,7 @@ import time
 #from line_profiler import LineProfiler
 
 try:
-    from .. import surrogate
+    from ..surrogate.dbs_multivariate_var import calc as dbs_multivariate_var
 except ImportError:
     from surrogate.dbs_multivariate_var import calc as dbs_multivariate_var
 

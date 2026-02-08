@@ -19,7 +19,8 @@ from __future__ import print_function, division   # for Python 2 compatible
 import numpy as np
 
 try:
-    from .. import glm  # for package
+    from ..glm.canonical_hrf import get as canonical_hrf  # for package
+    from ..glm.hrf_design_matrix import get as hrf_design_matrix
 except ImportError:
     from glm.canonical_hrf import get as canonical_hrf  # for command mode
     from glm.hrf_design_matrix import get as hrf_design_matrix

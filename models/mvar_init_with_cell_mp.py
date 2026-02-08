@@ -6,7 +6,7 @@ import joblib
 from concurrent.futures import ProcessPoolExecutor
 
 try:
-    from .. import models
+    from ..models.regress import linear  # for command mode
 except ImportError:
     from models.regress import linear  # for command mode
 

@@ -19,7 +19,9 @@ import h5py
 import hdf5storage
 
 try:
-    from .. import models  # for package
+    from ..models.regress import prepare  # for command mode
+    from ..models.regress import linear   # for command mode
+    from ..models.mvar_init_with_cell_mth import call_executor as mvar_init_with_cell_mth
 except ImportError:
     from models.regress import prepare  # for command mode
     from models.regress import linear   # for command mode
