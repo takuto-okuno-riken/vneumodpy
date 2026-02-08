@@ -9,12 +9,11 @@ import scipy.io as sio
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
+from src import vneumodpy as vnm
 
 from scipy.spatial.distance import squareform
 from scipy.cluster.hierarchy import linkage, dendrogram
 from utils.parse_mtess_options import ParseOptions
-from utils.convert_sigmd import SigmoidConverter
-import measures
 
 
 # -------------------------------------------------------------------------
@@ -118,12 +117,6 @@ if __name__ == '__main__':
         print('no input files. exit script.')
         sys.exit()
 
-    # convert input & exogenous signals
-    if opt.transform == 1:
-        conv = SigmoidConverter()
-        for i in range(len(CX)):
-            CX[i], sig, c, max_si, min_si = conv.to_sigmoid_signal(x=CX[i], centroid=opt.transopt)
-
     # show input signals
     if opt.showinsig:
         for i in range(len(CX)):
@@ -174,7 +167,7 @@ if __name__ == '__main__':
     if opt.cache:
         cnames = CXnames
     mts, mtsp, nmts, nmtsp, means, stds, acs, pacs, cms, pcms, ccms, pccms, mkts = \
-        measures.mtess.calc(cx=CX, mtrange=mtrange, ac_lags=opt.aclag, pac_lags=opt.paclag, cc_lags=opt.cclag, pcc_lags=opt.pcclag,
+        vnm.mtess.calc(cx=CX, mtrange=mtrange, ac_lags=opt.aclag, pac_lags=opt.paclag, cc_lags=opt.cclag, pcc_lags=opt.pcclag,
                             cxnames=cnames, cache_path=opt.cachepath)
 
     # output result matrix files
@@ -182,8 +175,8 @@ if __name__ == '__main__':
 
     # show all matrix
     if opt.showmat:
-        measures.mtess.plot_bar3d(mts, savename)
-        measures.mtess.plot_all_mat(mts, mtsp, savename)
+        vnm.mtess.plot_bar3d(mts, savename)
+        vnm.mtess.plot_all_mat(mts, mtsp, savename)
 
     # show 1 vs. others signals
     if opt.showsig:
@@ -202,11 +195,11 @@ if __name__ == '__main__':
 
     # show 1 vs. others MTESS statistical properties
     if opt.showprop:
-        measures.mtess.plot_radar(mtsp[0, 1:7, :], savename, CXnames[1:7])
+        vnm.mtess.plot_radar(mtsp[0, 1:7, :], savename, CXnames[1:7])
 
     # show 1 vs. others node MTESS
     if opt.shownode:
-        measures.mtess.plot_node(nmts[0, 1:7, :], savename, CXnames[1:7])
+        vnm.mtess.plot_node(nmts[0, 1:7, :], savename, CXnames[1:7])
 
     # show dendrogram
     if opt.showdend:

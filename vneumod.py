@@ -13,16 +13,8 @@ import h5py
 import hdf5storage
 import nibabel as nib
 
+from src import vneumodpy as vnm
 from utils.parse_vneumod_options import ParseOptions
-from models.multivaliate_var_network import MultivariateVARNetwork
-from surrogate.vnm_addmul_signals import get as vnm_addmul_signals
-from surrogate.vnm_subject_perm import get as vnm_subject_perm
-from surrogate.vnm_var_surrogate import calc as vnm_var_surrogate
-from glm.adjust_volume_dir import adjust_volume_dir
-from glm.tukey_mp import calc as tukey_mp
-from glm.contrast_image import calc as contrast_image
-from glm.roi_ts_to4dimage import get as roi_ts_to4dimage
-
 #from line_profiler import LineProfiler
 
 # -------------------------------------------------------------------------
@@ -59,10 +51,10 @@ if __name__ == '__main__':
         exit(-1)
     targetDat = nib.load(opt.targatl[0])
     targetV = targetDat.get_fdata()
-    targetV = adjust_volume_dir(targetV, targetDat)
+    targetV = vnm.adjust_volume_dir(targetV, targetDat)
     atlasDat = nib.load(opt.atlas[0])
     atlasV = atlasDat.get_fdata()
-    atlasV = adjust_volume_dir(atlasV, atlasDat)
+    atlasV = vnm.adjust_volume_dir(atlasV, atlasDat)
 
     dbsidxs = []
     for j in range(len(rois)):
@@ -114,12 +106,12 @@ if __name__ == '__main__':
             print('error: old mat file is currently not supported: ' + opt.cx[0])
         else:  # h5py
             mat_net = dic['net']
-            net = MultivariateVARNetwork()
+            net = vnm.MultivariateVARNetwork()
             net.init_with_mat(mat_net)
             dic.close()
     elif len(opt.pymodel) > 0:
         print('load model path: ' + opt.pymodel[0])
-        net = MultivariateVARNetwork()
+        net = vnm.MultivariateVARNetwork()
         net.load(opt.pymodel[0])
     else:
         print('no group surrogate model file. please specify .mat file.')
@@ -173,7 +165,7 @@ if __name__ == '__main__':
         if len(perm) == 0 or perm is None:
             # generate subject permutation
             permf = opt.outpath + '/perm' + str(i + 1) + '_' + savename + '.mat'
-            perm, uxtime = vnm_subject_perm(CX)
+            perm, uxtime = vnm.vnm_subject_perm(CX)
             matdata = {}
             matdata['perm'] = perm
             matdata['uxtime'] = uxtime
@@ -189,7 +181,7 @@ if __name__ == '__main__':
             # get modulation (add & mul) time-series for vertual neuromodulation
             print('generate modulation (add & mul) time-series, target roi=' + str(roi) + ', srframes=' +str(opt.srframes)+ ', dbsoffsec=' +str(vnpm[0])+ ', dbsonsec=' +str(vnpm[1])+ ', dbspw=' +str(vnpm[2]))
             print('convolution params tr=' +str(opt.tr)+ ', res=' +str(hrfpm[0])+ ', sp=' +str(hrfpm[1]))
-            CA, Chrf, CM = vnm_addmul_signals(CX, dbsidx, opt.surrnum, opt.srframes, vnpm[0], vnpm[1], vnpm[2], opt.tr, hrfpm[0], hrfpm[1])
+            CA, Chrf, CM = vnm.vnm_addmul_signals(CX, dbsidx, opt.surrnum, opt.srframes, vnpm[0], vnpm[1], vnpm[2], opt.tr, hrfpm[0], hrfpm[1])
 
             # load virtual neuromodulation surrogate
             sessionName = savename+ '_' +str(roi)+ 'sr' +str(opt.surrnum)+ 'pr' +str(i+1)
@@ -213,7 +205,7 @@ if __name__ == '__main__':
             if len(S) == 0:
                 # calc virtual neuromodulation VAR surrogate
                 print('calc virtual neuromodulation surrogate. roi=' +str(roi)+ ', surrnum=' +str(opt.surrnum))
-                S = vnm_var_surrogate(net, CX, CA, CM, perm, opt.surrnum, opt.srframes)
+                S = vnm.vnm_var_surrogate(net, CX, CA, CM, perm, opt.surrnum, opt.srframes)
 
                 # Save the dictionary to a .mat file
                 # use 'matlab_compatible=True' to ensure it can be read by MATLAB
@@ -228,7 +220,7 @@ if __name__ == '__main__':
                 # load cube atlas file
                 atlasDat = nib.load(opt.atlas[0])
                 atlasV = atlasDat.get_fdata()
-                atlasV = adjust_volume_dir(atlasV, atlasDat)
+                atlasV = vnm.adjust_volume_dir(atlasV, atlasDat)
 
                 tuM = 8 # GLM tukey-taper size
                 betaBmat = opt.outpath +'/'+ sessionName +'_2nd-Tukey' + str(tuM) +'.mat'
@@ -257,7 +249,7 @@ if __name__ == '__main__':
                         Xorg = Chrf[k]
                         Xt = np.concatenate([Xorg, np.ones((Xorg.shape[0], 1), dtype=np.float32)],1)
                         Sk = np.squeeze(S[k])
-                        B2, RSS, df, _, _ = tukey_mp(Sk.T, Xt, tuM=tuM, isOutX2is=False)
+                        B2, RSS, df, _, _ = vnm.tukey_mp(Sk.T, Xt, tuM=tuM, isOutX2is=False)
                         bmatC[k] = B2
 #                        lp = LineProfiler() # check profile
 #                        lp_wrapper = lp(glm.tukey.calc)
@@ -282,7 +274,7 @@ if __name__ == '__main__':
                     B1[np.isnan(B1)] = 0  # there might be nan
 
                     # calc 2nd-level estimation
-                    B, RSS, df, X2is, tRs = tukey_mp(B1, X2, tuM=tuM, isOutX2is=True, n_jobs=opt.njobs)
+                    B, RSS, df, X2is, tRs = vnm.tukey_mp(B1, X2, tuM=tuM, isOutX2is=True, n_jobs=opt.njobs)
 
                     # Save the dictionary to a .mat file
                     # use 'matlab_compatible=True' to ensure it can be read by MATLAB
@@ -298,12 +290,12 @@ if __name__ == '__main__':
 
                 # GLM contrast images
                 contrasts = [np.array([1,0]).T] # GLM contrust
-                Ts = contrast_image(contrasts, B, RSS, X2is, tRs) # this is fast enough
-                V2 = roi_ts_to4dimage(Ts[0], atlasV)  # returns 4D image. this is slow
+                Ts = vnm.contrast_image(contrasts, B, RSS, X2is, tRs) # this is fast enough
+                V2 = vnm.roi_ts_to4dimage(Ts[0], atlasV)  # returns 4D image. this is slow
                 V2 = np.squeeze(V2)
 
                 # output nifti file
-                V2 = adjust_volume_dir(V2.astype(np.float32), atlasDat)
+                V2 = vnm.adjust_volume_dir(V2.astype(np.float32), atlasDat)
                 nifti_image = nib.Nifti1Image(V2, atlasDat.affine)
                 outniiname = opt.outpath +'/'+ sessionName +'_2nd-Tukey' + str(tuM) +'.nii.gz'
                 nib.save(nifti_image, outniiname)

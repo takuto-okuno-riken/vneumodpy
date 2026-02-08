@@ -13,11 +13,7 @@ import h5py
 import urllib.request
 
 from utils.parse_gsdgm_options import ParseOptions
-
-from models import group_range
-from models.multivaliate_var_network import MultivariateVARNetwork
-from surrogate.multivariate_var import calc as multivariate_var
-
+from src import vneumodpy as vnm
 
 # -------------------------------------------------------------------------
 # matrix calculation
@@ -206,12 +202,12 @@ if __name__ == '__main__':
     # training mode
     net = None
     if len(CX) > 0:
-        gr = group_range.get(CX)
+        gr = vnm.group_range.get(CX)
 
         # generate model data
         if opt.var:
             ntype = 'var'
-            net = MultivariateVARNetwork()
+            net = vnm.MultivariateVARNetwork()
             net.init_with_cell(CX, lags=opt.lag, usecache=opt.cache, n_jobs=opt.njobs)
             # file size may be too big. hdf5storage.write does not work well
             f_name = opt.outpath + os.sep + savename+'_gsm_'+ntype
@@ -224,9 +220,9 @@ if __name__ == '__main__':
     if mat_net is not None:
         # currently, we only support var network
         ntype = 'var'
-        net = MultivariateVARNetwork()
+        net = vnm.MultivariateVARNetwork()
         net.init_with_mat(mat_net)
-        gr = group_range.get_dic(mat_range)
+        gr = vnm.group_range.get_dic(mat_range)
 
     if net is not None and opt.surrnum > 0:
         if opt.siglen > 0:
@@ -258,7 +254,7 @@ if __name__ == '__main__':
             sys.exit()
 
         if ntype == 'var':
-            y = multivariate_var(x, net, surr_num=opt.surrnum, dist=opt.noise, y_range=yrange)
+            y = vnm.multivariate_var(x, net, surr_num=opt.surrnum, dist=opt.noise, y_range=yrange)
             save_result_files(opt, y, savename + '_gsd_' + ntype)
 
         # show surrogate signals

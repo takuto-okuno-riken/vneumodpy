@@ -3,12 +3,9 @@
 import os
 import numpy as np
 import joblib
-from concurrent.futures import ProcessPoolExecutor
 
-try:
-    from ..models.regress import linear  # for command mode
-except ImportError:
-    from models.regress import linear  # for command mode
+from concurrent.futures import ProcessPoolExecutor
+from ..models.regress import linear  # for command mode
 
 # global values
 g_xti1 = None

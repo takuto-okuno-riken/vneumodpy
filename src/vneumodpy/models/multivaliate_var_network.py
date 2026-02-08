@@ -18,14 +18,9 @@ import time
 import h5py
 import hdf5storage
 
-try:
-    from ..models.regress import prepare  # for command mode
-    from ..models.regress import linear   # for command mode
-    from ..models.mvar_init_with_cell_mth import call_executor as mvar_init_with_cell_mth
-except ImportError:
-    from models.regress import prepare  # for command mode
-    from models.regress import linear   # for command mode
-    from models.mvar_init_with_cell_mth import call_executor as mvar_init_with_cell_mth
+from ..models.regress import prepare  # for command mode
+from ..models.regress import linear   # for command mode
+from ..models.mvar_init_with_cell_mth import call_executor as mvar_init_with_cell_mth
 
 class MultivariateVARNetwork(object):
     def __init__(self):

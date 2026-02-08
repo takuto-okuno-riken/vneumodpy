@@ -18,12 +18,8 @@ from __future__ import print_function, division   # for Python 2 compatible
 
 import numpy as np
 
-try:
-    from ..glm.canonical_hrf import get as canonical_hrf  # for package
-    from ..glm.hrf_design_matrix import get as hrf_design_matrix
-except ImportError:
-    from glm.canonical_hrf import get as canonical_hrf  # for command mode
-    from glm.hrf_design_matrix import get as hrf_design_matrix
+from ..glm.canonical_hrf import get as canonical_hrf  # for package
+from ..glm.hrf_design_matrix import get as hrf_design_matrix
 
 def get(CX, dbsidx, surrnum=40, srframes=160, dbsoffsec=28, dbsonsec=22, dbspw=0.15, TR=1.0, res=16, sp=8):
 

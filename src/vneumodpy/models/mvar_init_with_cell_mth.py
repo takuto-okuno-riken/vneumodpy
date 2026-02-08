@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
 
-try:
-    from ..models.regress import linear
-except ImportError:
-    from models.regress import linear
-
+from ..models.regress import linear
 from concurrent.futures import ThreadPoolExecutor
 
 

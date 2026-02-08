@@ -13,10 +13,7 @@ from __future__ import print_function, division   # for Python 2 compatible
 
 import numpy as np
 
-try:
-    from ..glm.canonical_hrf import get as canonical_hrf    # for command mode
-except ImportError:
-    from glm.canonical_hrf import get as canonical_hrf    # for command mode
+from ..glm.canonical_hrf import get as canonical_hrf    # for command mode
 
 def get(onsets, durations, frames, TR, res, sp, hrf=[]):
 
