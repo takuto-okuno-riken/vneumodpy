@@ -101,7 +101,7 @@ options:
   --range RANGE        output surrogate value range (default:"auto", sigma:<num>, full:<num>,
                        <min>:<max> or "none")
   --cache              save cache file at model calculation
-  --njobs NJOBS        number of jobs (multiprocessing) for model calculation (default:8)
+  --njobs NJOBS        number of jobs (multiprocessing) for model calculation (default:-1)
   --showinsig          show input time-series data of <filename>.csv
   --showinras          show raster plot of input time-series data of <filename>.csv
   --showsig            show output surrogate time-series data
@@ -136,7 +136,7 @@ The output (group surrogate data) .mat file includes the following cell data:
 usage: vneumod.py [-h] [--cx CX] [--pymodel PYMODEL] [--model MODEL] [--atlas ATLAS]
                   [--targatl TARGATL] [--roi ROI] [--out OUT] [--outfrom OUTFROM]
                   [--surrnum SURRNUM] [--srframes SRFRAMES] [--vnparam VNPARAM] [--tr TR]
-                  [--hrfparam HRFPARAM] [--glm] [--outpath OUTPATH] [--nocache]
+                  [--hrfparam HRFPARAM] [--glm] [--njobs NJOBS] [--outpath OUTPATH] [--nocache]
                   [filename ...]
 
 positional arguments:
@@ -150,7 +150,7 @@ options:
   --atlas ATLAS        set cube atlas nifti file (<filename>.nii.gz)
   --targatl TARGATL    set modulation target atlas nifti file (<filename>.nii.gz)
   --roi ROI            set modulation target ROI <num> or <range text>
-  --out OUT            set output perm & surrogate files number <num> (default:1)
+  --out OUT            set output trials (perm & surrogate files) number <num> (default:1)
   --outfrom OUTFROM    set surrogate output from <num> (default:1)
   --surrnum SURRNUM    output surrogate sessions per one file <num> (default:40)
   --srframes SRFRAMES  output surrogate frames <num> (default:160)
@@ -158,6 +158,7 @@ options:
   --tr TR              set TR (second) of fMRI time-series <num> (default:1)
   --hrfparam HRFPARAM  set HRF (for convolution) params <num,num> (default:16,8)
   --glm                output GLM result nifti file
+  --njobs NJOBS        number of jobs (multiprocessing) for glm calculation (default:8)
   --outpath OUTPATH    output files path (default:"results")
   --nocache            do not output surrogate file
 ~~~
@@ -172,18 +173,19 @@ The output will be T-value 3D matrix nifti file (GLM result) aligned with cube a
 <b>mtess command</b><br>
 ~~~
 (vneumod) vneumodpy-main>python mtess.py -h
-usage: mtess.py [-h] [--range RANGE] [--aclag ACLAG] [--paclag PACLAG] [--cclag CCLAG] [--pcclag PCCLAG]
-                [--outpath OUTPATH] [--format FORMAT] [--transform TRANSFORM] [--transopt TRANSOPT] [--showinsig]
-                [--showinras] [--showmat] [--showsig] [--showprop] [--shownode] [--showdend SHOWDEND] [--cache]
-                [--cachepath CACHEPATH]
+usage: mtess.py [-h] [--range RANGE] [--aclag ACLAG] [--paclag PACLAG] [--cclag CCLAG]
+                [--pcclag PCCLAG] [--outpath OUTPATH] [--format FORMAT] [--transform TRANSFORM]
+                [--transopt TRANSOPT] [--showinsig] [--showinras] [--showmat] [--showsig]
+                [--showprop] [--shownode] [--showdend SHOWDEND] [--cache] [--cachepath CACHEPATH]
                 filename [filename ...]
 
 positional arguments:
   filename              filename of node status time-series (node x frames)
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
-  --range RANGE         input group value range (default:"auto", sigma:<num>, full:<num> or <min>:<max>)
+  --range RANGE         input group value range (default:"auto", sigma:<num>, full:<num> or
+                        <min>:<max>)
   --aclag ACLAG         time lag <num> for Auto Correlation (default:5)
   --paclag PACLAG       time lag <num> for Partial Auto Correlation (default:13)
   --cclag CCLAG         time lag <num> for Cross Correlation (default:2)
