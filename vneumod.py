@@ -13,13 +13,15 @@ import h5py
 import hdf5storage
 import nibabel as nib
 
-from . import models
 from utils.parse_vneumod_options import ParseOptions
+from models.multivaliate_var_network import MultivariateVARNetwork
+from surrogate.vnm_addmul_signals import get as vnm_addmul_signals
+from surrogate.vnm_subject_perm import get as vnm_subject_perm
+from surrogate.vnm_var_surrogate import calc as vnm_var_surrogate
 from glm.adjust_volume_dir import adjust_volume_dir
-from models import multivaliate_var_network as mvar
-
-import surrogate
-import glm
+from glm.tukey_mp import calc as tukey_mp
+from glm.contrast_image import calc as contrast_image
+from glm.roi_ts_to4dimage import get as roi_ts_to4dimage
 
 #from line_profiler import LineProfiler
 
@@ -112,12 +114,12 @@ if __name__ == '__main__':
             print('error: old mat file is currently not supported: ' + opt.cx[0])
         else:  # h5py
             mat_net = dic['net']
-            net = mvar.MultivariateVARNetwork()
+            net = MultivariateVARNetwork()
             net.init_with_mat(mat_net)
             dic.close()
     elif len(opt.pymodel) > 0:
         print('load model path: ' + opt.pymodel[0])
-        net = mvar.MultivariateVARNetwork()
+        net = MultivariateVARNetwork()
         net.load(opt.pymodel[0])
     else:
         print('no group surrogate model file. please specify .mat file.')
@@ -171,7 +173,7 @@ if __name__ == '__main__':
         if len(perm) == 0 or perm is None:
             # generate subject permutation
             permf = opt.outpath + '/perm' + str(i + 1) + '_' + savename + '.mat'
-            perm, uxtime = surrogate.vnm_subject_perm.get(CX)
+            perm, uxtime = vnm_subject_perm(CX)
             matdata = {}
             matdata['perm'] = perm
             matdata['uxtime'] = uxtime
@@ -187,7 +189,7 @@ if __name__ == '__main__':
             # get modulation (add & mul) time-series for vertual neuromodulation
             print('generate modulation (add & mul) time-series, target roi=' + str(roi) + ', srframes=' +str(opt.srframes)+ ', dbsoffsec=' +str(vnpm[0])+ ', dbsonsec=' +str(vnpm[1])+ ', dbspw=' +str(vnpm[2]))
             print('convolution params tr=' +str(opt.tr)+ ', res=' +str(hrfpm[0])+ ', sp=' +str(hrfpm[1]))
-            CA, Chrf, CM = surrogate.vnm_addmul_signals.get(CX, dbsidx, opt.surrnum, opt.srframes, vnpm[0], vnpm[1], vnpm[2], opt.tr, hrfpm[0], hrfpm[1])
+            CA, Chrf, CM = vnm_addmul_signals(CX, dbsidx, opt.surrnum, opt.srframes, vnpm[0], vnpm[1], vnpm[2], opt.tr, hrfpm[0], hrfpm[1])
 
             # load virtual neuromodulation surrogate
             sessionName = savename+ '_' +str(roi)+ 'sr' +str(opt.surrnum)+ 'pr' +str(i+1)
@@ -211,7 +213,7 @@ if __name__ == '__main__':
             if len(S) == 0:
                 # calc virtual neuromodulation VAR surrogate
                 print('calc virtual neuromodulation surrogate. roi=' +str(roi)+ ', surrnum=' +str(opt.surrnum))
-                S = surrogate.vnm_var_surrogate.calc(net, CX, CA, CM, perm, opt.surrnum, opt.srframes)
+                S = vnm_var_surrogate(net, CX, CA, CM, perm, opt.surrnum, opt.srframes)
 
                 # Save the dictionary to a .mat file
                 # use 'matlab_compatible=True' to ensure it can be read by MATLAB
@@ -255,7 +257,7 @@ if __name__ == '__main__':
                         Xorg = Chrf[k]
                         Xt = np.concatenate([Xorg, np.ones((Xorg.shape[0], 1), dtype=np.float32)],1)
                         Sk = np.squeeze(S[k])
-                        B2, RSS, df, _, _ = glm.tukey_mp.calc(Sk.T, Xt, tuM=tuM, isOutX2is=False)
+                        B2, RSS, df, _, _ = tukey_mp(Sk.T, Xt, tuM=tuM, isOutX2is=False)
                         bmatC[k] = B2
 #                        lp = LineProfiler() # check profile
 #                        lp_wrapper = lp(glm.tukey.calc)
@@ -280,7 +282,7 @@ if __name__ == '__main__':
                     B1[np.isnan(B1)] = 0  # there might be nan
 
                     # calc 2nd-level estimation
-                    B, RSS, df, X2is, tRs = glm.tukey_mp.calc(B1, X2, tuM=tuM, isOutX2is=True, n_jobs=opt.njobs)
+                    B, RSS, df, X2is, tRs = tukey_mp(B1, X2, tuM=tuM, isOutX2is=True, n_jobs=opt.njobs)
 
                     # Save the dictionary to a .mat file
                     # use 'matlab_compatible=True' to ensure it can be read by MATLAB
@@ -296,8 +298,8 @@ if __name__ == '__main__':
 
                 # GLM contrast images
                 contrasts = [np.array([1,0]).T] # GLM contrust
-                Ts = glm.contrast_image.calc(contrasts, B, RSS, X2is, tRs) # this is fast enough
-                V2 = glm.roi_ts_to4dimage.get(Ts[0], atlasV)  # returns 4D image. this is slow
+                Ts = contrast_image(contrasts, B, RSS, X2is, tRs) # this is fast enough
+                V2 = roi_ts_to4dimage(Ts[0], atlasV)  # returns 4D image. this is slow
                 V2 = np.squeeze(V2)
 
                 # output nifti file

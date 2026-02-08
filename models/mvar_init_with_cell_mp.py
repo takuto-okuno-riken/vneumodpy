@@ -2,16 +2,19 @@
 
 import os
 import numpy as np
-from .. import models
 import joblib
 from concurrent.futures import ProcessPoolExecutor
+
+try:
+    from .. import models
+except ImportError:
+    from models.regress import linear  # for command mode
 
 # global values
 g_xti1 = None
 g_perm = None
 g_RiQ = None
 g_dR2i = None
-
 
 # for multiprocessing function
 def init_with_cell_loop_fn(i, yi):
@@ -20,7 +23,7 @@ def init_with_cell_loop_fn(i, yi):
     global g_RiQ
     global g_dR2i
     print('calc node ' + str(i))
-    b, r = models.regress.linear(yi, g_xti1, perm=g_perm, RiQ=g_RiQ, dR2i=g_dR2i)  # around 2 sec
+    b, r = linear(yi, g_xti1, perm=g_perm, RiQ=g_RiQ, dR2i=g_dR2i)  # around 2 sec
     return i, b, r
 
 #    lr = LinearRegression(fit_intercept=True)

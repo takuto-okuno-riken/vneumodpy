@@ -12,14 +12,18 @@
 from __future__ import print_function, division   # for Python 2 compatible
 
 import numpy as np
-from .. import glm
+
+try:
+    from .. import glm  # for package
+except ImportError:
+    from glm.canonical_hrf import get as canonical_hrf    # for command mode
 
 def get(onsets, durations, frames, TR, res, sp, hrf=[]):
 
     # get Canonical hemodynamic response function
     if len(hrf) == 0:
         dt = TR / res
-        t, hrf = glm.canonical_hrf.get(dt)
+        t, hrf = canonical_hrf(dt)
 
     tasknum = len(onsets)
     X = np.zeros((frames * res, tasknum), float)

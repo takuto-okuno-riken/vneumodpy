@@ -17,7 +17,13 @@ import array
 import time
 import h5py
 import hdf5storage
-from .. import models
+
+try:
+    from .. import models  # for package
+except ImportError:
+    from models.regress import prepare  # for command mode
+    from models.regress import linear   # for command mode
+    from models.mvar_init_with_cell_mth import call_executor as mvar_init_with_cell_mth
 
 class MultivariateVARNetwork(object):
     def __init__(self):
@@ -79,11 +85,11 @@ class MultivariateVARNetwork(object):
             xti[:, self.node_max*p:self.node_max*(p+1)] = y[1+p:self.sig_len-lags+1+p, :]
         xti1 = np.concatenate([xti, np.ones((self.sig_len-lags, 1), dtype=x.dtype)], 1)
 
-        _, _, perm, RiQ, dR2i = models.regress.prepare(xti1)
+        _, _, perm, RiQ, dR2i = prepare(xti1)
 
         for i in range(self.node_num):
             yi = y[0:self.sig_len - lags, i]
-            b, r = models.regress.linear(yi, xti1, perm=perm, RiQ=RiQ, dR2i=dR2i)
+            b, r = linear(yi, xti1, perm=perm, RiQ=RiQ, dR2i=dR2i)
 
             self.bvec.append(b)
             self.residuals.append(r)
@@ -147,7 +153,7 @@ class MultivariateVARNetwork(object):
         else:
             print('prepare regression')
             start = time.time()
-            _, _, perm, RiQ, _ = models.regress.prepare(xti1)
+            _, _, perm, RiQ, _ = prepare(xti1)
             print('regress.prepare t=' + str(time.time() - start) + ' sec')
 
             '''
@@ -174,7 +180,7 @@ class MultivariateVARNetwork(object):
         # call multithread to calc regressions in each node. multiprocess does not change speed so much
         # !! caution !! this consumes huge memory.
         start = time.time()
-        futures = models.mvar_init_with_cell_mth.call_executor(self.node_num, xt, xti1, perm, RiQ, None, n_threads=n_jobs)
+        futures = mvar_init_with_cell_mth(self.node_num, xt, xti1, perm, RiQ, None, n_threads=n_jobs)
 
         self.bvec = [None] * len(futures)
         self.residuals = [None] * len(futures)

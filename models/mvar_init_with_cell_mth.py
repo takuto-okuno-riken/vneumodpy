@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
 
-from .. import models
+try:
+    from .. import models
+except ImportError:
+    from models.regress import linear
+
 from concurrent.futures import ThreadPoolExecutor
 
 
 # for multithreading function
 def init_with_cell_loop_fn(i, yi, xti1, perm, RiQ, dR2i):
     print('calc node ' + str(i))
-    b, r = models.regress.linear(yi, xti1, perm=perm, RiQ=RiQ, dR2i=dR2i)  # around 2 sec
+    b, r = linear(yi, xti1, perm=perm, RiQ=RiQ, dR2i=dR2i)  # around 2 sec
     return i, b, r
 
 

@@ -19,7 +19,6 @@ from __future__ import print_function, division   # for Python 2 compatible
 
 import numpy as np
 from numpy.random import default_rng
-from scipy.stats import multivariate_normal
 
 def calc(X, exSignal, net, A, M, dist='gaussian', surrNum=1, yRange=None, nBaset=None, Cin=None, Errin=None):
     nodeNum = X.shape[0]

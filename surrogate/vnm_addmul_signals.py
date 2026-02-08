@@ -17,14 +17,18 @@
 from __future__ import print_function, division   # for Python 2 compatible
 
 import numpy as np
-import scipy.io as sio
-from .. import glm
+
+try:
+    from .. import glm  # for package
+except ImportError:
+    from glm.canonical_hrf import get as canonical_hrf  # for command mode
+    from glm.hrf_design_matrix import get as hrf_design_matrix
 
 def get(CX, dbsidx, surrnum=40, srframes=160, dbsoffsec=28, dbsonsec=22, dbspw=0.15, TR=1.0, res=16, sp=8):
 
     # get HRF
     dt = TR / res
-    [t, hrf] = glm.canonical_hrf.get(dt) # human's HRF;
+    [t, hrf] = canonical_hrf(dt) # human's HRF;
 
     # find time series range
     cxlen = len(CX)
@@ -52,7 +56,7 @@ def get(CX, dbsidx, surrnum=40, srframes=160, dbsoffsec=28, dbsonsec=22, dbspw=0
             dur[j] = dbsonsec
         onsets = [ons]
         durations = [dur]
-        ch, U = glm.hrf_design_matrix.get(onsets, durations, srframes, TR, res, sp, hrf)
+        ch, U = hrf_design_matrix(onsets, durations, srframes, TR, res, sp, hrf)
         Chrf[i] = ch.astype(np.float32)
 #        sio.savemat('temp_chrf.mat',{'chrf':Chrf[i],'U':U}) # for debug
         block = np.full((n,srframes), np.nan, dtype=np.float32) # need to allocate new memory
