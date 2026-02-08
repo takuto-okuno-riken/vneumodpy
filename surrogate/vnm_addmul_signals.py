@@ -18,7 +18,7 @@ from __future__ import print_function, division   # for Python 2 compatible
 
 import numpy as np
 import scipy.io as sio
-import glm
+from .. import glm
 
 def get(CX, dbsidx, surrnum=40, srframes=160, dbsoffsec=28, dbsonsec=22, dbspw=0.15, TR=1.0, res=16, sp=8):
 

@@ -13,12 +13,15 @@ import h5py
 import hdf5storage
 import nibabel as nib
 
+from . import models
 from utils.parse_vneumod_options import ParseOptions
-import models
-import surrogate
+from glm.adjust_volume_dir import adjust_volume_dir
+from models import multivaliate_var_network as mvar
 
+import surrogate
 import glm
-from line_profiler import LineProfiler
+
+#from line_profiler import LineProfiler
 
 # -------------------------------------------------------------------------
 # util functions
@@ -33,7 +36,10 @@ if __name__ == '__main__':
         opt.outpath = opt.outpath[0]  # replaced by string
 
     # extract rois
-    if ':' in opt.roi[0]:
+    if len(opt.roi) == 0:
+        print('no modulation target ROI number. please specify ROI.')
+        exit(-1)
+    elif ':' in opt.roi[0]:
         t = opt.roi[0].split(':')
         rois = list(range(int(t[0]), int(t[1])+1))
     elif ',' in opt.roi[0]:
@@ -51,10 +57,10 @@ if __name__ == '__main__':
         exit(-1)
     targetDat = nib.load(opt.targatl[0])
     targetV = targetDat.get_fdata()
-    targetV = glm.adjust_volume_dir(targetV, targetDat)
+    targetV = adjust_volume_dir(targetV, targetDat)
     atlasDat = nib.load(opt.atlas[0])
     atlasV = atlasDat.get_fdata()
-    atlasV = glm.adjust_volume_dir(atlasV, atlasDat)
+    atlasV = adjust_volume_dir(atlasV, atlasDat)
 
     dbsidxs = []
     for j in range(len(rois)):
@@ -77,7 +83,7 @@ if __name__ == '__main__':
     print('load subject time-series file: ' + opt.cx[0])
     try:
         dic = sio.loadmat(opt.cx[0])
-    except NotImplementedError:  # -v3.7
+    except NotImplementedError:  # -v7.3
         dic = h5py.File(opt.cx[0], 'r')
     if dic.get('CX') is None:
         print('no cells of subject time-series (CX) file. please specify .mat file.')
@@ -106,13 +112,16 @@ if __name__ == '__main__':
             print('error: old mat file is currently not supported: ' + opt.cx[0])
         else:  # h5py
             mat_net = dic['net']
-            net = models.MultivariateVARNetwork()
+            net = mvar.MultivariateVARNetwork()
             net.init_with_mat(mat_net)
             dic.close()
     elif len(opt.pymodel) > 0:
         print('load model path: ' + opt.pymodel[0])
-        net = models.MultivariateVARNetwork()
+        net = mvar.MultivariateVARNetwork()
         net.load(opt.pymodel[0])
+    else:
+        print('no group surrogate model file. please specify .mat file.')
+        exit(-1)
 
     # init
     isMatf = len(opt.in_files) > 0
@@ -156,6 +165,7 @@ if __name__ == '__main__':
                     print('error: old mat file is currently not supported: ' + permf)
                 else:  # h5py
                     perm = np.array(dic['perm']).T[0]  # Dataset to single array 1xlength
+                    perm = perm.astype(np.int32)
                     dic.close()
 
         if len(perm) == 0 or perm is None:
@@ -216,7 +226,7 @@ if __name__ == '__main__':
                 # load cube atlas file
                 atlasDat = nib.load(opt.atlas[0])
                 atlasV = atlasDat.get_fdata()
-                atlasV = glm.adjust_volume_dir(atlasV, atlasDat)
+                atlasV = adjust_volume_dir(atlasV, atlasDat)
 
                 tuM = 8 # GLM tukey-taper size
                 betaBmat = opt.outpath +'/'+ sessionName +'_2nd-Tukey' + str(tuM) +'.mat'
@@ -244,7 +254,8 @@ if __name__ == '__main__':
                     for k in range(surrNum):
                         Xorg = Chrf[k]
                         Xt = np.concatenate([Xorg, np.ones((Xorg.shape[0], 1), dtype=np.float32)],1)
-                        B2, RSS, df, _, _ = glm.tukey_mp.calc(S[k][:,:,0].T, Xt, tuM=tuM, isOutX2is=False)
+                        Sk = np.squeeze(S[k])
+                        B2, RSS, df, _, _ = glm.tukey_mp.calc(Sk.T, Xt, tuM=tuM, isOutX2is=False)
                         bmatC[k] = B2
 #                        lp = LineProfiler() # check profile
 #                        lp_wrapper = lp(glm.tukey.calc)
@@ -258,7 +269,7 @@ if __name__ == '__main__':
                     print('calc 2nd-level GLM...')
                     B1 = bmatC[0][:,[0,1]].T
                     X2 = np.eye(B1.shape[0])
-                    for k in range(1,opt.surrnum):
+                    for k in range(1,surrNum):
                         # 2nd-level Y vector
                         B2 = bmatC[k][:,[0,1]].T # include design and intercept(we need more than 8 length for tukey taper)
                         B1 = np.concatenate([B1, B2],0)
@@ -269,7 +280,7 @@ if __name__ == '__main__':
                     B1[np.isnan(B1)] = 0  # there might be nan
 
                     # calc 2nd-level estimation
-                    B, RSS, df, X2is, tRs = glm.tukey_mp.calc(B1, X2, tuM=tuM, isOutX2is=True)
+                    B, RSS, df, X2is, tRs = glm.tukey_mp.calc(B1, X2, tuM=tuM, isOutX2is=True, n_jobs=opt.njobs)
 
                     # Save the dictionary to a .mat file
                     # use 'matlab_compatible=True' to ensure it can be read by MATLAB
@@ -287,10 +298,10 @@ if __name__ == '__main__':
                 contrasts = [np.array([1,0]).T] # GLM contrust
                 Ts = glm.contrast_image.calc(contrasts, B, RSS, X2is, tRs) # this is fast enough
                 V2 = glm.roi_ts_to4dimage.get(Ts[0], atlasV)  # returns 4D image. this is slow
-                V2 = V2[:,:,:,0]
+                V2 = np.squeeze(V2)
 
                 # output nifti file
-                V2 = glm.adjust_volume_dir(V2.astype(np.float32), atlasDat)
+                V2 = adjust_volume_dir(V2.astype(np.float32), atlasDat)
                 nifti_image = nib.Nifti1Image(V2, atlasDat.affine)
                 outniiname = opt.outpath +'/'+ sessionName +'_2nd-Tukey' + str(tuM) +'.nii.gz'
                 nib.save(nifti_image, outniiname)

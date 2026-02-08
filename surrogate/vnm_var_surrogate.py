@@ -13,7 +13,7 @@
 from __future__ import print_function, division   # for Python 2 compatible
 
 import numpy as np
-import surrogate
+from .. import surrogate
 import time
 #import scipy.io as sio
 #from line_profiler import LineProfiler
@@ -43,7 +43,7 @@ def calc(net, CX, CA, CM, perm, surrnum, srframes):
 #            lp_wrapper(X[:,0:srframes], [], net, CA[i], CM[i], dist, 1, None, nBaset, C, Err)
 #            lp.print_stats()
 
-            S[i], C, Err, _ = surrogate.dbs_multivariate_var(X[:,0:srframes], [], net, CA[i], CM[i], dist, 1, None, nBaset, C, Err)
+            S[i], C, Err, _ = surrogate.dbs_multivariate_var.calc(X[:,0:srframes], [], net, CA[i], CM[i], dist, 1, None, nBaset, C, Err)
             print('done t=' +str(time.time() - start)+ ' sec')
 #        sio.savemat('tempS.mat',{'S0':S[i]}) # for debug
     return S

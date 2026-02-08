@@ -17,8 +17,7 @@ import array
 import time
 import h5py
 import hdf5storage
-import models
-
+from .. import models
 
 class MultivariateVARNetwork(object):
     def __init__(self):

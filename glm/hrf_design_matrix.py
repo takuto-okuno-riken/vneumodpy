@@ -12,7 +12,7 @@
 from __future__ import print_function, division   # for Python 2 compatible
 
 import numpy as np
-import glm
+from .. import glm
 
 def get(onsets, durations, frames, TR, res, sp, hrf=[]):
 

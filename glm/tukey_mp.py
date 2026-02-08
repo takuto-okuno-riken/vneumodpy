@@ -48,7 +48,7 @@ def loop_fn(i, Yi, X, tuWin, tuM, isOutX2is):
     Pxx = np.zeros(r.shape[0], dtype=np.float32)
     Pxx[:tuM] = Rxx[:tuM] * tuWin[:tuM]
     V1 = toeplitz(Pxx)
-    K1 = np.linalg.cholesky(V1, upper=False)
+    K1 = np.linalg.cholesky(V1) # upper=False is not necessary (numpy v1)
 
     # second time regression
 #    Ki1 = np.linalg.inv(K1)
@@ -74,7 +74,7 @@ def loop_fn(i, Yi, X, tuWin, tuM, isOutX2is):
     trs = np.trace(IR)
     return i, b, rss, x2is, trs
 
-def calc(Y, X, tuM=None, isOutX2is=False):
+def calc(Y, X, tuM=None, isOutX2is=False, n_jobs=8):
     if tuM is None:
         tuM = int(np.floor(np.sqrt(X.shape[0])))
 
@@ -93,7 +93,7 @@ def calc(Y, X, tuM=None, isOutX2is=False):
         tuWin[k] = 0.5 * (1 + np.cos(np.pi * (k+1) / tuM))
 
     start = time.time()
-    with ProcessPoolExecutor(max_workers=os.cpu_count() // 2) as executor:  # -----(2)
+    with ProcessPoolExecutor(max_workers=n_jobs) as executor:  # -----(2)
         futures = set()
         for i in range(roiNum):
             future = executor.submit(loop_fn, i, Y[:, i], X, tuWin, tuM, isOutX2is)

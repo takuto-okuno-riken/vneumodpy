@@ -2,7 +2,7 @@
 
 import os
 import numpy as np
-import models
+from .. import models
 import joblib
 from concurrent.futures import ProcessPoolExecutor
 

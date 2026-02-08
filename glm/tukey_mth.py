@@ -48,7 +48,7 @@ def loop_fn(i, Yi, X, tuWin, tuM, isOutX2is):
     Pxx = np.zeros(r.shape[0], dtype=np.float32)
     Pxx[:tuM] = Rxx[:tuM] * tuWin[:tuM]
     V1 = toeplitz(Pxx)
-    K1 = np.linalg.cholesky(V1, upper=False)
+    K1 = np.linalg.cholesky(V1) # upper=False is not necessary (numpy v1)
 
     # second time regression
 #    Ki1 = np.linalg.inv(K1)
