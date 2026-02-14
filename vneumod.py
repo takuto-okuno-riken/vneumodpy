@@ -165,10 +165,11 @@ if __name__ == '__main__':
         if len(perm) == 0 or perm is None:
             # generate subject permutation
             permf = opt.outpath + '/perm' + str(i + 1) + '_' + savename + '.mat'
-            perm, uxtime = vnm.vnm_subject_perm(CX)
+            perm, uxtime, reslen = vnm.vnm_subject_perm(CX, net.lags)
             matdata = {}
             matdata['perm'] = perm
             matdata['uxtime'] = uxtime
+            matdata['reslen'] = reslen
             hdf5storage.write(matdata, filename=permf, matlab_compatible=True)
             print('save perm file : ' + permf)
 

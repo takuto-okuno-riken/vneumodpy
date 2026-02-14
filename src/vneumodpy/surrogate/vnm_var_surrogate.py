@@ -25,7 +25,7 @@ except ImportError:
 def calc(net, CX, CA, CM, perm, surrnum, srframes):
     dist = 'residuals'
     cxlen = len(CX)
-    frames = CX[0].shape[1]
+    reslen = CX[0].shape[1] - net.lags  # residual length
 
     # Virtual Neuromodulation VAR surrogate
     S = [None] * surrnum
@@ -40,7 +40,7 @@ def calc(net, CX, CA, CM, perm, surrnum, srframes):
         if i > len(S) or S[i] is None:
             start = time.time()
             # ordered residual with subject permutation
-            nBaset = [perm[frames*i:frames*(i+1)], 0]
+            nBaset = [perm[reslen*i:reslen*(i+1)], 0]
 
 #            lp = LineProfiler() # check profile
 #            lp_wrapper = lp(surrogate.dbs_multivariate_var)
