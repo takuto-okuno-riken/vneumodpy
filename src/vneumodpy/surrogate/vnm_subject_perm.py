@@ -4,7 +4,7 @@
 # returns permutated time-series (perm), uxtime and residual length (reslen).
 # input:
 #  CX              cells of multivariate time series matrix {node x time series}
-#  lags            number of lags for autoregression
+#  lags            number of lags for autoregression (default:1)
 
 from __future__ import print_function, division   # for Python 2 compatible
 
@@ -12,7 +12,7 @@ import numpy as np
 from datetime import datetime
 import time
 
-def get(CX, lags):
+def get(CX, lags=1):
     perm = np.empty(0)
     cxlen = len(CX)
     reslen = CX[0].shape[1] - lags  # residual length

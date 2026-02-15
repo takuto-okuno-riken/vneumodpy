@@ -165,7 +165,7 @@ if __name__ == '__main__':
         if len(perm) == 0 or perm is None:
             # generate subject permutation
             permf = opt.outpath + '/perm' + str(i + 1) + '_' + savename + '.mat'
-            perm, uxtime, reslen = vnm.vnm_subject_perm(CX, net.lags)
+            perm, uxtime, reslen = vnm.vnm_subject_perm(CX, lags=net.lags)
             matdata = {}
             matdata['perm'] = perm
             matdata['uxtime'] = uxtime
