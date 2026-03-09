@@ -253,4 +253,4 @@ class MultivariateVARNetwork(object):
         matdata['net'] = net
         if gRange is not None:
             matdata['gRange'] = gRange
-        hdf5storage.write(matdata, filename=path_name, matlab_compatible=True)
+        hdf5storage.savemat(path_name, matdata)

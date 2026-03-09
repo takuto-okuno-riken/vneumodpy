@@ -12,6 +12,7 @@ from .glm.tukey import calc as tukey
 from .glm.tukey_mp import calc as tukey_mp  # multi processing version
 from .glm.contrast_image import calc as contrast_image
 from .glm.roi_ts_to4dimage import get as roi_ts_to4dimage
+from .glm.roi_ts_from4dimage import get as roi_ts_from4dimage
 from .glm.adjust_volume_dir import adjust_volume_dir
 from .glm.resampling_nifti_volume import resampling_nifti_volume
 
@@ -31,3 +32,7 @@ from .measures import pccm_
 from .measures import mtess
 from .measures import mskewkurt
 from .measures.cos_sim import calc as cos_sim
+
+from .nuisance.mean_time_series import get as nuisance_mean_time_series
+from .nuisance.acompcor import get as nuisance_acompcor
+from .nuisance.regression_out import get as nuisance_regression_out
