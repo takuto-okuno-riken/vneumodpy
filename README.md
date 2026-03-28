@@ -24,7 +24,7 @@ Then, we extended output of VAR surrogate for virtual neuromodulation.
 </div>
 
 
-where x<sub>i</sub>(t) is output of voxel i, y<sub>i</sub>(t) is VAR surrogate output of voxel i, z<sub>i</sub>(t),u<sub>i</sub>(t) is modulation term of voxel i, and c<sub>i</sub>,σ<sub>X</sub>∈R. 
+where x<sub>i</sub>(t) is output of voxel i, y<sub>i</sub>(t) is VAR surrogate output of voxel i, z<sub>i</sub>(t),u<sub>i</sub>(t) are modulation terms of voxel i, and c<sub>i</sub>,σ<sub>X</sub>∈R. 
 σ<sub>X</sub> is calculated as the standard deviation from the entire voxel time-series.
 z<sub>i</sub>(t) is constructed by convolution of the canonical Hemodynamic Response Function (HRF) and the Box-car task design.
 u<sub>i</sub>(t) performs direct adjustment to the output of VAR surrogate.
