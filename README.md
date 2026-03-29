@@ -110,6 +110,7 @@ This demo shows creation of a group surrogate model from (pre-processed) rs-fMRI
 (Caution: model calculation will take like one day.)
 ~~~
 (vneumod) vneumodpy-main>python gsdgm.py --var results/ppmi81CXAllenCube2s34gmacomp.mat
+load subject time-series file: results/ppmi81CXAllenCube2s34gmacomp.mat
 output group surrogate model file : results/ppmi81CXAllenCube2s34gmacomp_gsm_var.mat
 ~~~
 
