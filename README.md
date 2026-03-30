@@ -72,7 +72,7 @@ Using the above-mentioned virtual neuromodulation, BOLD signal addition, i.e., D
 ## Command Line Tools Demos
 <b>Demo 1</b><br>
 First demo uses a PD group surrogate model to apply sweet spot stimulus of the virtual STN-DBS, performs GLM analysis, and then outputs an NIfTI file.
-Pre-processed subject data and group surrogate model files should be downloaded from [zenodo](https://doi.org/10.5281/zenodo.15532271), and extracted a zip file to overwrite 'results' directory in <work_path>/vneumod-main before running this code.<br/>
+Pre-processed subject data and group surrogate model files should be downloaded from [zenodo](https://zenodo.org/records/19312573?preview=1), and extracted a zip file to overwrite 'results' directory in <work_path>/vneumod-main before running this code.<br/>
 (Please confirm to update results directory.)
 
 ~~~
