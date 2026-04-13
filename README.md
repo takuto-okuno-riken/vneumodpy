@@ -268,3 +268,6 @@ Similarities are generated for the following 8 statistical properties: mean, sta
 
 ## Citing Virtual Neuromodulation Toolbox
 If you find Virtual Neuromodulation Toolbox useful in your research, please cite it as follows: 
+
+Takuto Okuno, Alexander Woodward, Hideyuki Okano, Junichi Hata (submitted)
+["Do distinct DBS targets converge on a common associative circuit? A digital brain study"](https://www.google.com/), ,
